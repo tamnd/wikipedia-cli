@@ -59,6 +59,9 @@ SBOMs and a cosign signature are attached to every
   Service.
 - **Go bulk.** `dump list`/`download`/`pages`/`grep` over the public XML dumps,
   with resume, sha1 verification, and constant-memory streaming.
+- **Go offline.** `dump export` turns a whole dump into a corpus of clean
+  Markdown (or text), one file per article, parsing wikitext and keeping code
+  blocks, headings, and links while dropping template and reference chrome.
 
 Every command shares one output contract: `-o table` (the default on a
 terminal), `json`, `jsonl` (the default in a pipe), `csv`, `tsv`, `url`, and Go

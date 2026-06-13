@@ -263,10 +263,7 @@ func skipElement(n *html.Node) bool {
 			return true
 		}
 	}
-	if attr(n, "role") == "navigation" {
-		return true
-	}
-	return false
+	return attr(n, "role") == "navigation"
 }
 
 func hasClass(n *html.Node, class string) bool {

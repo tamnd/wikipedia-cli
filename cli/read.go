@@ -19,6 +19,13 @@ type contentFlags struct {
 	rev      int
 }
 
+// explicitForm reports whether the user asked for a specific render form, so
+// get can honour it instead of falling back to the JSON summary when piped.
+func (f *contentFlags) explicitForm() bool {
+	return f.text || f.markdown || f.html || f.wikitext || f.lead ||
+		f.section >= 0 || f.rev > 0
+}
+
 func (f *contentFlags) bind(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&f.text, "text", false, "render as plain text (default)")
 	cmd.Flags().BoolVarP(&f.markdown, "markdown", "m", false, "render as Markdown")
@@ -142,7 +149,8 @@ Examples:
 				if err != nil {
 					return err
 				}
-				if app.Out.Format() == FormatJSON || app.Out.Format() == FormatJSONL {
+				jsonOut := app.Out.Format() == FormatJSON || app.Out.Format() == FormatJSONL
+				if jsonOut && !f.explicitForm() {
 					s, err := c.GetSummary(cmd.Context(), title)
 					if err != nil {
 						return wrapErr(err)
