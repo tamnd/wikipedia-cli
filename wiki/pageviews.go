@@ -7,10 +7,19 @@ import (
 	"time"
 )
 
-// PageviewPoint is one date/value pair in a pageview time series.
+// PageviewPoint is one entry in a pageview time series. Besides the date and
+// view count, it keeps the request context each item carries, so a row records
+// exactly which project, article, access method, agent and granularity it came
+// from and the raw timestamp.
 type PageviewPoint struct {
-	Date  string `json:"date"`
-	Views int    `json:"views"`
+	Date        string `json:"date"`
+	Views       int    `json:"views"`
+	Project     string `json:"project,omitempty"`
+	Article     string `json:"article,omitempty"`
+	Access      string `json:"access,omitempty"`
+	Agent       string `json:"agent,omitempty"`
+	Granularity string `json:"granularity,omitempty"`
+	Timestamp   string `json:"timestamp,omitempty"`
 }
 
 // Pageviews returns the daily or monthly pageview series for a title between two
@@ -32,8 +41,13 @@ func (c *Client) Pageviews(ctx context.Context, title, granularity, access, agen
 		granularity, from.Format("20060102"), to.Format("20060102"))
 	var resp struct {
 		Items []struct {
-			Timestamp string `json:"timestamp"`
-			Views     int    `json:"views"`
+			Project     string `json:"project"`
+			Article     string `json:"article"`
+			Granularity string `json:"granularity"`
+			Timestamp   string `json:"timestamp"`
+			Access      string `json:"access"`
+			Agent       string `json:"agent"`
+			Views       int    `json:"views"`
 		} `json:"items"`
 	}
 	if err := c.HTTP.GetJSON(ctx, u, ttlPageviews, &resp); err != nil {
@@ -41,17 +55,34 @@ func (c *Client) Pageviews(ctx context.Context, title, granularity, access, agen
 	}
 	out := make([]PageviewPoint, 0, len(resp.Items))
 	for _, it := range resp.Items {
-		out = append(out, PageviewPoint{Date: formatViewDate(it.Timestamp, granularity), Views: it.Views})
+		out = append(out, PageviewPoint{
+			Date:        formatViewDate(it.Timestamp, granularity),
+			Views:       it.Views,
+			Project:     it.Project,
+			Article:     it.Article,
+			Access:      it.Access,
+			Agent:       it.Agent,
+			Granularity: it.Granularity,
+			Timestamp:   it.Timestamp,
+		})
 	}
 	return out, nil
 }
 
-// TopArticle is one entry in a most-viewed list.
+// TopArticle is one entry in a most-viewed list. It keeps the URL-path article
+// key and the project, access method and date the list was drawn from, so a row
+// is self-describing.
 type TopArticle struct {
-	Rank  int    `json:"rank"`
-	Title string `json:"title"`
-	Views int    `json:"views"`
-	URL   string `json:"url"`
+	Rank    int    `json:"rank"`
+	Title   string `json:"title"`
+	Article string `json:"article,omitempty"`
+	Views   int    `json:"views"`
+	Project string `json:"project,omitempty"`
+	Access  string `json:"access,omitempty"`
+	Year    string `json:"year,omitempty"`
+	Month   string `json:"month,omitempty"`
+	Day     string `json:"day,omitempty"`
+	URL     string `json:"url"`
 }
 
 // Top returns the most-viewed articles for a day, or for a month when day == 0.
@@ -64,6 +95,11 @@ func (c *Client) Top(ctx context.Context, year, month, day, limit int) ([]TopArt
 		MetricsBase, c.Site.Host, year, month, dayStr)
 	var resp struct {
 		Items []struct {
+			Project  string `json:"project"`
+			Access   string `json:"access"`
+			Year     string `json:"year"`
+			Month    string `json:"month"`
+			Day      string `json:"day"`
 			Articles []struct {
 				Article string `json:"article"`
 				Views   int    `json:"views"`
@@ -78,9 +114,14 @@ func (c *Client) Top(ctx context.Context, year, month, day, limit int) ([]TopArt
 	if len(resp.Items) == 0 {
 		return out, nil
 	}
-	for _, a := range resp.Items[0].Articles {
+	it := resp.Items[0]
+	for _, a := range it.Articles {
 		title := strings.ReplaceAll(a.Article, "_", " ")
-		out = append(out, TopArticle{Rank: a.Rank, Title: title, Views: a.Views, URL: c.Site.PageURL(a.Article)})
+		out = append(out, TopArticle{
+			Rank: a.Rank, Title: title, Article: a.Article, Views: a.Views,
+			Project: it.Project, Access: it.Access, Year: it.Year, Month: it.Month, Day: it.Day,
+			URL: c.Site.PageURL(a.Article),
+		})
 		if limit > 0 && len(out) >= limit {
 			break
 		}

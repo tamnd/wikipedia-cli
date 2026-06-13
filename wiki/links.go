@@ -5,11 +5,13 @@ import (
 	"strconv"
 )
 
-// Link is a wiki link (internal) or external link target.
+// Link is a wiki link (internal) or external link target. The page id is set
+// for backlinks, where the API reports it.
 type Link struct {
-	Title string `json:"title,omitempty"`
-	NS    int    `json:"ns"`
-	URL   string `json:"url"`
+	Title  string `json:"title,omitempty"`
+	NS     int    `json:"ns"`
+	Pageid int    `json:"pageid,omitempty"`
+	URL    string `json:"url"`
 }
 
 // Links returns the internal wiki links on a page. When namespace >= 0 only that
@@ -103,8 +105,9 @@ func (c *Client) Backlinks(ctx context.Context, title string, namespace, limit i
 		apiError
 		Query struct {
 			Backlinks []struct {
-				NS    int    `json:"ns"`
-				Title string `json:"title"`
+				Pageid int    `json:"pageid"`
+				NS     int    `json:"ns"`
+				Title  string `json:"title"`
 			} `json:"backlinks"`
 		} `json:"query"`
 	}
@@ -116,17 +119,19 @@ func (c *Client) Backlinks(ctx context.Context, title string, namespace, limit i
 	}
 	out := make([]Link, 0, len(resp.Query.Backlinks))
 	for _, b := range resp.Query.Backlinks {
-		out = append(out, Link{Title: b.Title, NS: b.NS, URL: c.Site.PageURL(b.Title)})
+		out = append(out, Link{Title: b.Title, NS: b.NS, Pageid: b.Pageid, URL: c.Site.PageURL(b.Title)})
 	}
 	return out, nil
 }
 
-// LangLink is an interlanguage link.
+// LangLink is an interlanguage link. Autonym is the language's name in its own
+// script; LangName is its name in the local wiki's language.
 type LangLink struct {
-	Lang    string `json:"lang"`
-	Title   string `json:"title"`
-	Autonym string `json:"autonym,omitempty"`
-	URL     string `json:"url"`
+	Lang     string `json:"lang"`
+	Title    string `json:"title"`
+	Autonym  string `json:"autonym,omitempty"`
+	LangName string `json:"langname,omitempty"`
+	URL      string `json:"url"`
 }
 
 // LangLinks returns the same article in other languages.
@@ -135,7 +140,7 @@ func (c *Client) LangLinks(ctx context.Context, title string, limit int) ([]Lang
 	v.Set("action", "query")
 	v.Set("prop", "langlinks")
 	v.Set("lllimit", limitParam(limit))
-	v.Set("llprop", "url|autonym")
+	v.Set("llprop", "url|autonym|langname")
 	v.Set("redirects", "1")
 	v.Set("titles", title)
 	var resp struct {
@@ -143,10 +148,11 @@ func (c *Client) LangLinks(ctx context.Context, title string, limit int) ([]Lang
 		Query struct {
 			Pages []struct {
 				LangLinks []struct {
-					Lang    string `json:"lang"`
-					Title   string `json:"title"`
-					Autonym string `json:"autonym"`
-					URL     string `json:"url"`
+					Lang     string `json:"lang"`
+					Title    string `json:"title"`
+					Autonym  string `json:"autonym"`
+					LangName string `json:"langname"`
+					URL      string `json:"url"`
 				} `json:"langlinks"`
 			} `json:"pages"`
 		} `json:"query"`
@@ -160,7 +166,7 @@ func (c *Client) LangLinks(ctx context.Context, title string, limit int) ([]Lang
 	var out []LangLink
 	for _, p := range resp.Query.Pages {
 		for _, l := range p.LangLinks {
-			out = append(out, LangLink{Lang: l.Lang, Title: l.Title, Autonym: l.Autonym, URL: l.URL})
+			out = append(out, LangLink{Lang: l.Lang, Title: l.Title, Autonym: l.Autonym, LangName: l.LangName, URL: l.URL})
 		}
 	}
 	return out, nil

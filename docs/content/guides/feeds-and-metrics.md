@@ -40,6 +40,10 @@ wiki top 2024-01-01 -n 25      # a specific day
 wiki top 2024-01 -o jsonl      # a whole month
 ```
 
+In JSON each row keeps the URL-path `article` key alongside the readable title,
+and the project, access method and the year, month and day the list was drawn
+from, so a row is self-describing.
+
 ## Pageviews over time
 
 A daily or monthly time series for one article. Defaults to the last 30 days:
@@ -61,3 +65,7 @@ CSV output drops straight into a spreadsheet or a plotting script:
 ```bash
 wiki pageviews "ChatGPT" --days 180 -o csv > views.csv
 ```
+
+Each point in the JSON series keeps its full request context: the project,
+article, access method, agent and granularity, plus the raw API timestamp next
+to the formatted date.

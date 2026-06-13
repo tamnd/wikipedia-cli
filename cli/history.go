@@ -34,8 +34,8 @@ Examples:
 			}
 			for _, r := range revs {
 				if err := app.Out.Emit(Row{
-					Cols:  []string{"revid", "parentid", "timestamp", "user", "size", "minor", "comment", "tags"},
-					Vals:  []string{itoa(r.RevID), itoa(r.ParentID), r.Timestamp, r.User, itoa(r.Size), boolWord(r.Minor, "m", ""), r.Comment, r.Tags},
+					Cols:  []string{"revid", "parentid", "timestamp", "user", "userid", "size", "minor", "comment", "tags"},
+					Vals:  []string{itoa(r.RevID), itoa(r.ParentID), r.Timestamp, r.User, itoa(r.UserID), itoa(r.Size), boolWord(r.Minor, "m", ""), r.Comment, r.TagsLine()},
 					Value: r,
 				}); err != nil {
 					return err

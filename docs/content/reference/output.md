@@ -19,6 +19,20 @@ everywhere. Set the format with `-o/--output`.
 | `url` | Just the URL column, one per line. |
 | `raw` | The first column, unadorned (also used by `--template`). |
 
+## Tables curate, JSON keeps everything
+
+The `table`, `csv`, `tsv` and `url` views show a curated set of columns chosen
+to read well. The `json` and `jsonl` views are lossless: each record carries
+every field the underlying API returns, so you can reconstruct the original
+response from the structured output and pick out fields the table never shows.
+
+For example, `search` prints title, description and snippet at the terminal,
+but its JSON also has the page id, the URL-safe `key`, the `matched_title` and
+a `thumbnail` object; `revisions` adds the user id, parsed comment, content
+sha1 and the change tags as an array; `stats` adds the server, paths, software
+versions and wiki id. When you want a field that is not a column, reach for
+`-o json` (and `--fields` or `--template` to project just what you need).
+
 ## auto
 
 The default is `auto`: a table when stdout is a terminal, JSONL when it is a

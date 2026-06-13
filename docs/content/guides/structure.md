@@ -23,6 +23,8 @@ wiki backlinks "Turing machine"
 wiki backlinks "Turing machine" -o url | head
 ```
 
+Backlinks carry the page id of each linking page in their structured output.
+
 ## Categories
 
 The categories a page belongs to:
@@ -38,6 +40,10 @@ wiki category "British computer scientists" -n 100 -o url
 wiki category Physics --type subcat       # subcategories only
 wiki category Physics --type file         # files only
 ```
+
+In JSON, each category a page belongs to keeps its sort key, sort-key prefix,
+timestamp and whether it is a hidden category; each category member keeps its
+page id.
 
 ## Media
 
@@ -71,6 +77,9 @@ wiki langs "Alan Turing"
 wiki langs "Alan Turing" -o jsonl | head
 ```
 
+Each link keeps the language code, the autonym (the language's name in its own
+script) and the langname (its name in this wiki's language), plus the URL.
+
 ## Page info
 
 Metadata about a page: id, length, last touched, content model, language, and
@@ -80,6 +89,10 @@ whether it is a redirect:
 wiki info "Alan Turing"
 wiki info "Alan Turing" -o json
 ```
+
+The JSON keeps the full info set: namespace, revision ids, watchers, the display
+title and language variant titles, the canonical, full and edit URLs, and the
+protection rules (type, level, expiry) as an array.
 
 ## Citations
 
