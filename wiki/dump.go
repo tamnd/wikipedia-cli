@@ -20,11 +20,14 @@ import (
 
 // DumpFile is one file produced by a dump job.
 type DumpFile struct {
-	Job  string `json:"job"`
-	Name string `json:"name"`
-	Size int64  `json:"size"`
-	Sha1 string `json:"sha1,omitempty"`
-	URL  string `json:"url"`
+	Job     string `json:"job"`
+	Name    string `json:"name"`
+	Size    int64  `json:"size"`
+	Sha1    string `json:"sha1,omitempty"`
+	Md5     string `json:"md5,omitempty"`
+	URL     string `json:"url"`
+	Status  string `json:"status,omitempty"`
+	Updated string `json:"updated,omitempty"`
 }
 
 // DumpList returns the files of a dump for a wiki and date. date may be a
@@ -43,11 +46,13 @@ func (c *Client) DumpList(ctx context.Context, wiki, date string) ([]DumpFile, s
 	statusURL := fmt.Sprintf("%s/%s/%s/dumpstatus.json", DumpsBase, wiki, date)
 	var status struct {
 		Jobs map[string]struct {
-			Status string `json:"status"`
-			Files  map[string]struct {
+			Status  string `json:"status"`
+			Updated string `json:"updated"`
+			Files   map[string]struct {
 				Size int64  `json:"size"`
 				URL  string `json:"url"`
 				Sha1 string `json:"sha1"`
+				Md5  string `json:"md5"`
 			} `json:"files"`
 		} `json:"jobs"`
 	}
@@ -58,8 +63,9 @@ func (c *Client) DumpList(ctx context.Context, wiki, date string) ([]DumpFile, s
 	for job, j := range status.Jobs {
 		for name, f := range j.Files {
 			out = append(out, DumpFile{
-				Job: job, Name: name, Size: f.Size, Sha1: f.Sha1,
-				URL: DumpsBase + f.URL,
+				Job: job, Name: name, Size: f.Size, Sha1: f.Sha1, Md5: f.Md5,
+				URL:    DumpsBase + f.URL,
+				Status: j.Status, Updated: j.Updated,
 			})
 		}
 	}
@@ -166,15 +172,61 @@ func VerifySha1(path, expected string) (bool, error) {
 	return strings.EqualFold(hex.EncodeToString(h.Sum(nil)), expected), nil
 }
 
-// DumpPage is one page record streamed from a pages-articles XML dump.
+// DumpPage is one page record streamed from a MediaWiki XML dump. A
+// pages-articles dump carries a single current revision per page; a
+// pages-meta-history dump carries the full revision list, and Revisions holds
+// every one of them in order.
 type DumpPage struct {
-	ID        int    `json:"id"`
-	NS        int    `json:"ns"`
-	Title     string `json:"title"`
-	RevID     int    `json:"revid"`
-	Timestamp string `json:"timestamp"`
-	Redirect  bool   `json:"redirect,omitempty"`
-	Text      string `json:"text,omitempty"`
+	ID            int            `json:"id"`
+	NS            int            `json:"ns"`
+	Title         string         `json:"title"`
+	Redirect      bool           `json:"redirect,omitempty"`
+	RedirectTitle string         `json:"redirecttitle,omitempty"`
+	Restrictions  string         `json:"restrictions,omitempty"`
+	Revisions     []DumpRevision `json:"revisions,omitempty"`
+}
+
+// DumpRevision is one revision of a page, with the contributor and content
+// metadata the XML schema carries.
+type DumpRevision struct {
+	ID          int          `json:"id"`
+	ParentID    int          `json:"parentid,omitempty"`
+	Timestamp   string       `json:"timestamp,omitempty"`
+	Contributor *Contributor `json:"contributor,omitempty"`
+	Minor       bool         `json:"minor,omitempty"`
+	Comment     string       `json:"comment,omitempty"`
+	Model       string       `json:"model,omitempty"`
+	Format      string       `json:"format,omitempty"`
+	Origin      int          `json:"origin,omitempty"`
+	Sha1        string       `json:"sha1,omitempty"`
+	TextBytes   int64        `json:"textbytes,omitempty"`
+	Text        string       `json:"text,omitempty"`
+}
+
+// Contributor is the author of a revision: a registered user (Username + ID),
+// an anonymous edit (IP), or a deleted/suppressed author.
+type Contributor struct {
+	Username string `json:"username,omitempty"`
+	ID       int    `json:"id,omitempty"`
+	IP       string `json:"ip,omitempty"`
+	Deleted  bool   `json:"deleted,omitempty"`
+}
+
+// Latest returns the most recent revision, or nil for a page with none. For a
+// pages-articles dump that is the page's single current revision.
+func (p DumpPage) Latest() *DumpRevision {
+	if len(p.Revisions) == 0 {
+		return nil
+	}
+	return &p.Revisions[len(p.Revisions)-1]
+}
+
+// LatestText returns the text of the most recent revision, or "".
+func (p DumpPage) LatestText() string {
+	if r := p.Latest(); r != nil {
+		return r.Text
+	}
+	return ""
 }
 
 // StreamPages parses a local pages-articles XML dump (optionally bz2/gz) and
@@ -274,14 +326,33 @@ func streamPagesReader(r io.Reader, namespace int, withText bool, fn func(DumpPa
 			continue
 		}
 		var page struct {
-			Title    string    `xml:"title"`
-			NS       int       `xml:"ns"`
-			ID       int       `xml:"id"`
-			Redirect *struct{} `xml:"redirect"`
-			Revision struct {
-				ID        int    `xml:"id"`
-				Timestamp string `xml:"timestamp"`
-				Text      string `xml:"text"`
+			Title    string `xml:"title"`
+			NS       int    `xml:"ns"`
+			ID       int    `xml:"id"`
+			Redirect *struct {
+				Title string `xml:"title,attr"`
+			} `xml:"redirect"`
+			Restrictions string `xml:"restrictions"`
+			Revisions    []struct {
+				ID          int    `xml:"id"`
+				ParentID    int    `xml:"parentid"`
+				Timestamp   string `xml:"timestamp"`
+				Contributor *struct {
+					Username string `xml:"username"`
+					ID       int    `xml:"id"`
+					IP       string `xml:"ip"`
+					Deleted  string `xml:"deleted,attr"`
+				} `xml:"contributor"`
+				Minor   *struct{} `xml:"minor"`
+				Comment string    `xml:"comment"`
+				Model   string    `xml:"model"`
+				Format  string    `xml:"format"`
+				Origin  int       `xml:"origin"`
+				Sha1    string    `xml:"sha1"`
+				Text    struct {
+					Value string `xml:",chardata"`
+					Bytes int64  `xml:"bytes,attr"`
+				} `xml:"text"`
 			} `xml:"revision"`
 		}
 		if err := dec.DecodeElement(&page, &se); err != nil {
@@ -292,11 +363,29 @@ func streamPagesReader(r io.Reader, namespace int, withText bool, fn func(DumpPa
 		}
 		dp := DumpPage{
 			ID: page.ID, NS: page.NS, Title: page.Title,
-			RevID: page.Revision.ID, Timestamp: page.Revision.Timestamp,
 			Redirect: page.Redirect != nil,
 		}
-		if withText {
-			dp.Text = page.Revision.Text
+		if page.Redirect != nil {
+			dp.RedirectTitle = page.Redirect.Title
+		}
+		dp.Restrictions = page.Restrictions
+		for _, rv := range page.Revisions {
+			dr := DumpRevision{
+				ID: rv.ID, ParentID: rv.ParentID, Timestamp: rv.Timestamp,
+				Comment: rv.Comment, Model: rv.Model, Format: rv.Format,
+				Origin: rv.Origin, Sha1: rv.Sha1, Minor: rv.Minor != nil,
+				TextBytes: rv.Text.Bytes,
+			}
+			if rv.Contributor != nil {
+				dr.Contributor = &Contributor{
+					Username: rv.Contributor.Username, ID: rv.Contributor.ID,
+					IP: rv.Contributor.IP, Deleted: rv.Contributor.Deleted != "",
+				}
+			}
+			if withText {
+				dr.Text = rv.Text.Value
+			}
+			dp.Revisions = append(dp.Revisions, dr)
 		}
 		if err := fn(dp); err != nil {
 			if err == errStop {
