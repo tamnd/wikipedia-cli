@@ -16,7 +16,10 @@ wiki geosearch 48.8584,2.2945 --radius 2000
 wiki geosearch 51.5007 -0.1246 -n 20
 ```
 
-Each result has the title, its coordinates, the distance in metres, and a URL:
+Each result has the title, its coordinates, the distance in metres, and a URL.
+The JSON output adds everything else the geosearch list reports: the page id and
+namespace, whether this is the page's primary coordinate, and the feature type,
+name, dimension, country, region and globe.
 
 ```bash
 wiki geosearch 40.7484,-73.9857 -o jsonl

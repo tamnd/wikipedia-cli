@@ -20,7 +20,9 @@ wiki revisions "Climate change" --user Jimbo -o jsonl
 ```
 
 The output carries everything you need to drill in: the `revid` of any row is
-what `diff` and `read --rev` take.
+what `diff` and `read --rev` take. The JSON keeps the full per-revision set the
+API returns, including the user id, the parsed (HTML) comment, the content
+sha1, and the change tags as an array.
 
 ## Diffs
 

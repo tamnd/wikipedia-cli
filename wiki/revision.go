@@ -6,17 +6,26 @@ import (
 	"strings"
 )
 
-// Revision is one entry in a page's revision history.
+// Revision is one entry in a page's revision history. It keeps everything the
+// revisions query returns under the widened rvprop set: the editor's user id,
+// the content sha1, the html-parsed edit summary, and the change tags as a
+// list rather than a flattened string.
 type Revision struct {
-	RevID     int    `json:"revid"`
-	ParentID  int    `json:"parentid"`
-	Timestamp string `json:"timestamp"`
-	User      string `json:"user"`
-	Size      int    `json:"size"`
-	Comment   string `json:"comment"`
-	Minor     bool   `json:"minor"`
-	Tags      string `json:"tags,omitempty"`
+	RevID         int      `json:"revid"`
+	ParentID      int      `json:"parentid"`
+	Timestamp     string   `json:"timestamp"`
+	User          string   `json:"user"`
+	UserID        int      `json:"userid,omitempty"`
+	Size          int      `json:"size"`
+	Comment       string   `json:"comment"`
+	ParsedComment string   `json:"parsedcomment,omitempty"`
+	Sha1          string   `json:"sha1,omitempty"`
+	Minor         bool     `json:"minor"`
+	Tags          []string `json:"tags,omitempty"`
 }
+
+// TagsLine joins the change tags for the table view.
+func (r Revision) TagsLine() string { return strings.Join(r.Tags, ",") }
 
 // Revisions returns the revision history of a page, newest first.
 func (c *Client) Revisions(ctx context.Context, title string, limit int, user string) ([]Revision, error) {
@@ -24,7 +33,7 @@ func (c *Client) Revisions(ctx context.Context, title string, limit int, user st
 	v.Set("action", "query")
 	v.Set("prop", "revisions")
 	v.Set("rvlimit", limitParam(limit))
-	v.Set("rvprop", "ids|timestamp|user|size|comment|flags|tags")
+	v.Set("rvprop", "ids|timestamp|user|userid|size|sha1|comment|parsedcomment|flags|tags")
 	if user != "" {
 		v.Set("rvuser", user)
 	}
@@ -34,17 +43,8 @@ func (c *Client) Revisions(ctx context.Context, title string, limit int, user st
 		apiError
 		Query struct {
 			Pages []struct {
-				Missing   bool `json:"missing"`
-				Revisions []struct {
-					RevID     int      `json:"revid"`
-					ParentID  int      `json:"parentid"`
-					Timestamp string   `json:"timestamp"`
-					User      string   `json:"user"`
-					Size      int      `json:"size"`
-					Comment   string   `json:"comment"`
-					Minor     bool     `json:"minor"`
-					Tags      []string `json:"tags"`
-				} `json:"revisions"`
+				Missing   bool       `json:"missing"`
+				Revisions []Revision `json:"revisions"`
 			} `json:"pages"`
 		} `json:"query"`
 	}
@@ -57,15 +57,7 @@ func (c *Client) Revisions(ctx context.Context, title string, limit int, user st
 	if len(resp.Query.Pages) == 0 || resp.Query.Pages[0].Missing {
 		return nil, ErrNotFound
 	}
-	var out []Revision
-	for _, r := range resp.Query.Pages[0].Revisions {
-		out = append(out, Revision{
-			RevID: r.RevID, ParentID: r.ParentID, Timestamp: r.Timestamp,
-			User: r.User, Size: r.Size, Comment: r.Comment, Minor: r.Minor,
-			Tags: strings.Join(r.Tags, ","),
-		})
-	}
-	return out, nil
+	return resp.Query.Pages[0].Revisions, nil
 }
 
 // RevisionContent returns the wikitext of a specific revision id.

@@ -35,6 +35,15 @@ Cap the result count with `-n` and pick columns with `--fields`:
 wiki search "volcano" -n 20 --fields title,description -o csv
 ```
 
+The JSON and JSONL output carries everything the search API returns for a hit,
+not just the columns shown in the table: the page id, the URL-safe `key`, the
+`matched_title` when the match came from a redirect, and a `thumbnail` object
+(url, mimetype, width, height) when the page has one.
+
+```bash
+wiki search "Alan Turing" -n 1 -o json
+```
+
 ## Prefix suggestions
 
 `suggest` is autocomplete: give a prefix, get the titles that start with it.
@@ -63,6 +72,9 @@ Find articles the reader of one page is likely to want next:
 wiki related "Alan Turing"
 wiki related "Quantum computing" -o jsonl
 ```
+
+Like search, `related` and `random` keep the page id, namespace and thumbnail in
+their structured output.
 
 ## Putting it together
 

@@ -7,15 +7,33 @@ import (
 	"strconv"
 )
 
-// SearchResult is one full-text search hit.
+// SearchResult is one search hit. It carries every field the search, random
+// and related endpoints return, so the structured output is a faithful copy:
+// the page id and namespace, the URL-path key, the matched title, the
+// thumbnail, and the size/wordcount/timestamp the Action API reports.
 type SearchResult struct {
-	Title       string `json:"title"`
-	Description string `json:"description,omitempty"`
-	Snippet     string `json:"snippet,omitempty"`
-	Size        int    `json:"size,omitempty"`
-	WordCount   int    `json:"wordcount,omitempty"`
-	Timestamp   string `json:"timestamp,omitempty"`
-	URL         string `json:"url"`
+	Title        string           `json:"title"`
+	Pageid       int              `json:"pageid,omitempty"`
+	NS           int              `json:"ns,omitempty"`
+	Key          string           `json:"key,omitempty"`
+	Description  string           `json:"description,omitempty"`
+	Snippet      string           `json:"snippet,omitempty"`
+	MatchedTitle string           `json:"matched_title,omitempty"`
+	Size         int              `json:"size,omitempty"`
+	WordCount    int              `json:"wordcount,omitempty"`
+	Timestamp    string           `json:"timestamp,omitempty"`
+	Thumbnail    *SearchThumbnail `json:"thumbnail,omitempty"`
+	URL          string           `json:"url"`
+}
+
+// SearchThumbnail is the representative image the core search endpoint returns
+// for a hit.
+type SearchThumbnail struct {
+	URL      string   `json:"url,omitempty"`
+	Mimetype string   `json:"mimetype,omitempty"`
+	Width    int      `json:"width,omitempty"`
+	Height   int      `json:"height,omitempty"`
+	Duration *float64 `json:"duration,omitempty"`
 }
 
 // Search runs a full-text search. It prefers the cross-wiki core endpoint for
@@ -31,19 +49,27 @@ func (c *Client) Search(ctx context.Context, query string, limit int) ([]SearchR
 		v.Set("limit", strconv.Itoa(min(limit, 100)))
 		var resp struct {
 			Pages []struct {
-				Title       string `json:"title"`
-				Excerpt     string `json:"excerpt"`
-				Description string `json:"description"`
+				ID           int              `json:"id"`
+				Key          string           `json:"key"`
+				Title        string           `json:"title"`
+				Excerpt      string           `json:"excerpt"`
+				MatchedTitle string           `json:"matched_title"`
+				Description  string           `json:"description"`
+				Thumbnail    *SearchThumbnail `json:"thumbnail"`
 			} `json:"pages"`
 		}
 		if err := c.HTTP.GetJSON(ctx, coreURL+"?"+v.Encode(), ttlSearch, &resp); err == nil && len(resp.Pages) > 0 {
 			out := make([]SearchResult, 0, len(resp.Pages))
 			for _, p := range resp.Pages {
 				out = append(out, SearchResult{
-					Title:       p.Title,
-					Description: p.Description,
-					Snippet:     stripHTML(p.Excerpt),
-					URL:         c.Site.PageURL(p.Title),
+					Title:        p.Title,
+					Pageid:       p.ID,
+					Key:          p.Key,
+					Description:  p.Description,
+					Snippet:      stripHTML(p.Excerpt),
+					MatchedTitle: p.MatchedTitle,
+					Thumbnail:    p.Thumbnail,
+					URL:          c.Site.PageURL(p.Title),
 				})
 			}
 			return out, nil
@@ -63,7 +89,9 @@ func (c *Client) searchAction(ctx context.Context, query string, limit int) ([]S
 		apiError
 		Query struct {
 			Search []struct {
+				NS        int    `json:"ns"`
 				Title     string `json:"title"`
+				Pageid    int    `json:"pageid"`
 				Snippet   string `json:"snippet"`
 				Size      int    `json:"size"`
 				WordCount int    `json:"wordcount"`
@@ -81,6 +109,8 @@ func (c *Client) searchAction(ctx context.Context, query string, limit int) ([]S
 	for _, s := range resp.Query.Search {
 		out = append(out, SearchResult{
 			Title:     s.Title,
+			Pageid:    s.Pageid,
+			NS:        s.NS,
 			Snippet:   stripHTML(s.Snippet),
 			Size:      s.Size,
 			WordCount: s.WordCount,
@@ -151,6 +181,8 @@ func (c *Client) Random(ctx context.Context, n, namespace int) ([]SearchResult, 
 		apiError
 		Query struct {
 			Random []struct {
+				ID    int    `json:"id"`
+				NS    int    `json:"ns"`
 				Title string `json:"title"`
 			} `json:"random"`
 		} `json:"query"`
@@ -164,7 +196,7 @@ func (c *Client) Random(ctx context.Context, n, namespace int) ([]SearchResult, 
 	}
 	out := make([]SearchResult, 0, len(resp.Query.Random))
 	for _, r := range resp.Query.Random {
-		out = append(out, SearchResult{Title: r.Title, URL: c.Site.PageURL(r.Title)})
+		out = append(out, SearchResult{Title: r.Title, Pageid: r.ID, NS: r.NS, URL: c.Site.PageURL(r.Title)})
 	}
 	return out, nil
 }
@@ -173,9 +205,12 @@ func (c *Client) Random(ctx context.Context, n, namespace int) ([]SearchResult, 
 func (c *Client) Related(ctx context.Context, title string) ([]SearchResult, error) {
 	var resp struct {
 		Pages []struct {
-			Title   string `json:"title"`
-			Extract string `json:"extract"`
-			Desc    string `json:"description"`
+			Pageid    int              `json:"pageid"`
+			NS        int              `json:"ns"`
+			Title     string           `json:"title"`
+			Extract   string           `json:"extract"`
+			Desc      string           `json:"description"`
+			Thumbnail *SearchThumbnail `json:"thumbnail"`
 		} `json:"pages"`
 	}
 	u := c.Site.RestV1("page/related/" + titlePath(title))
@@ -186,8 +221,11 @@ func (c *Client) Related(ctx context.Context, title string) ([]SearchResult, err
 	for _, p := range resp.Pages {
 		out = append(out, SearchResult{
 			Title:       p.Title,
+			Pageid:      p.Pageid,
+			NS:          p.NS,
 			Description: p.Desc,
 			Snippet:     stripHTML(p.Extract),
+			Thumbnail:   p.Thumbnail,
 			URL:         c.Site.PageURL(p.Title),
 		})
 	}
