@@ -47,6 +47,17 @@ The files used on a page, with URL, MIME type, dimensions, size, and license:
 wiki media "Alan Turing"
 ```
 
+The table flattens each file to a single row, picking the URL, MIME, size and
+license off the current revision. The structured output keeps the whole
+imageinfo record: the file and description URLs, media type, sha1, uploader and
+timestamp, the embedded EXIF and format metadata, and the complete extmetadata
+block (each entry with its value, source, and hidden flag). Nothing the API
+reports is dropped, so you can pull any field back out:
+
+```bash
+wiki media "Alan Turing" -n 1 -o json | jq '.[0].imageinfo[0].extmetadata.LicenseUrl.value'
+```
+
 Download them all to a directory:
 
 ```bash
