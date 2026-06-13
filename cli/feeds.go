@@ -62,29 +62,29 @@ func emitFeatured(app *App, feed *wiki.FeaturedFeed) error {
 		return app.Out.Flush()
 	}
 	if feed.TFA != nil {
-		_, _ = fmt.Fprintf(cmdOut, "Featured article: %s\n  %s\n  %s\n\n", feed.TFA.Title, feed.TFA.Description, feed.TFA.URL)
+		_, _ = fmt.Fprintf(cmdOut, "Featured article: %s\n  %s\n  %s\n\n", feed.TFA.Title, feed.TFA.Description, feed.TFA.URL())
 	}
-	if len(feed.MostRead) > 0 {
+	if feed.MostRead != nil && len(feed.MostRead.Articles) > 0 {
 		_, _ = fmt.Fprintln(cmdOut, "Most read:")
-		for _, a := range feed.MostRead {
+		for _, a := range feed.MostRead.Articles {
 			_, _ = fmt.Fprintf(cmdOut, "  %2d. %-40s %d views\n", a.Rank, a.Title, a.Views)
 		}
 		_, _ = fmt.Fprintln(cmdOut)
 	}
 	if feed.Image != nil {
-		_, _ = fmt.Fprintf(cmdOut, "Picture of the day: %s\n  %s\n\n", feed.Image.Title, feed.Image.URL)
+		_, _ = fmt.Fprintf(cmdOut, "Picture of the day: %s\n  %s\n\n", feed.Image.Title, feed.Image.URL())
 	}
 	if len(feed.News) > 0 {
 		_, _ = fmt.Fprintln(cmdOut, "In the news:")
 		for _, n := range feed.News {
-			_, _ = fmt.Fprintf(cmdOut, "  - %s\n", n.Story)
+			_, _ = fmt.Fprintf(cmdOut, "  - %s\n", n.StoryText())
 		}
 		_, _ = fmt.Fprintln(cmdOut)
 	}
 	if len(feed.OnThisDay) > 0 {
 		_, _ = fmt.Fprintln(cmdOut, "On this day:")
 		for _, o := range feed.OnThisDay {
-			_, _ = fmt.Fprintf(cmdOut, "  %d: %s\n", o.Year, o.Text)
+			_, _ = fmt.Fprintf(cmdOut, "  %d: %s\n", o.Year, o.TextPlain())
 		}
 	}
 	return nil
@@ -127,7 +127,7 @@ Examples:
 			for _, e := range events {
 				if err := app.Out.Emit(Row{
 					Cols:  []string{"year", "text", "pages"},
-					Vals:  []string{itoa(e.Year), e.Text, joinArgs(e.Pages)},
+					Vals:  []string{itoa(e.Year), e.TextPlain(), joinArgs(e.PageTitles())},
 					Value: e,
 				}); err != nil {
 					return err
