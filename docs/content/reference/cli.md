@@ -92,6 +92,7 @@ Shared render flags for `read` and `get`: `--text` (default), `--markdown`/`-m`,
 | `dump download <file\|job>` | Download with resume and sha1 verify; `--out-dir`. |
 | `dump pages <file>` | Stream-parse a pages-articles dump; `--namespace`, `--text`. |
 | `dump grep <pattern> <file>` | Emit pages matching a regexp; `--title-only`, `--text`. |
+| `dump export [file]` | Convert a dump to Markdown/text; `--out-dir`, `--format`, `--download`, `--min-bytes`. |
 
 ## Utility
 
