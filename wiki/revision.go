@@ -108,9 +108,27 @@ type DiffLine struct {
 	Text string `json:"text"`
 }
 
+// Diff is the result of comparing two revisions. It keeps both endpoints the
+// compare API reports (their page ids, revision ids, namespaces and titles) and
+// the raw HTML diff body, alongside the parsed unified-diff lines used for the
+// table and text views. With the body and both endpoints preserved, the JSON is
+// a faithful copy of the action=compare response.
+type Diff struct {
+	FromID    int        `json:"fromid,omitempty"`
+	FromRevID int        `json:"fromrevid,omitempty"`
+	FromNS    int        `json:"fromns,omitempty"`
+	FromTitle string     `json:"fromtitle,omitempty"`
+	ToID      int        `json:"toid,omitempty"`
+	ToRevID   int        `json:"torevid,omitempty"`
+	ToNS      int        `json:"tons,omitempty"`
+	ToTitle   string     `json:"totitle,omitempty"`
+	Body      string     `json:"body,omitempty"`
+	Lines     []DiffLine `json:"lines"`
+}
+
 // Diff compares two revisions. from/to may be numeric revision ids; the toRev
-// may also be "prev"/"cur"/"next" relative to from. It returns the diff lines.
-func (c *Client) Diff(ctx context.Context, fromRev int, toRev string) ([]DiffLine, error) {
+// may also be "prev"/"cur"/"next" relative to from.
+func (c *Client) Diff(ctx context.Context, fromRev int, toRev string) (*Diff, error) {
 	v := c.actionParams()
 	v.Set("action", "compare")
 	v.Set("fromrev", strconv.Itoa(fromRev))
@@ -119,11 +137,19 @@ func (c *Client) Diff(ctx context.Context, fromRev int, toRev string) ([]DiffLin
 	} else {
 		v.Set("torelative", toRev) // prev|next|cur
 	}
-	v.Set("prop", "diff")
+	v.Set("prop", "ids|title|diff")
 	var resp struct {
 		apiError
 		Compare struct {
-			Body string `json:"body"`
+			FromID    int    `json:"fromid"`
+			FromRevID int    `json:"fromrevid"`
+			FromNS    int    `json:"fromns"`
+			FromTitle string `json:"fromtitle"`
+			ToID      int    `json:"toid"`
+			ToRevID   int    `json:"torevid"`
+			ToNS      int    `json:"tons"`
+			ToTitle   string `json:"totitle"`
+			Body      string `json:"body"`
 		} `json:"compare"`
 	}
 	if err := c.actionJSON(ctx, v, ttlHistory, &resp); err != nil {
@@ -132,7 +158,13 @@ func (c *Client) Diff(ctx context.Context, fromRev int, toRev string) ([]DiffLin
 	if err := resp.err(); err != nil {
 		return nil, err
 	}
-	return parseDiffTable(resp.Compare.Body), nil
+	cm := resp.Compare
+	return &Diff{
+		FromID: cm.FromID, FromRevID: cm.FromRevID, FromNS: cm.FromNS, FromTitle: cm.FromTitle,
+		ToID: cm.ToID, ToRevID: cm.ToRevID, ToNS: cm.ToNS, ToTitle: cm.ToTitle,
+		Body:  cm.Body,
+		Lines: parseDiffTable(cm.Body),
+	}, nil
 }
 
 // parseDiffTable turns MediaWiki's HTML diff table into unified diff lines.

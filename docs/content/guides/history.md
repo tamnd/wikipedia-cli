@@ -38,11 +38,15 @@ wiki diff 123456789 123460000
 wiki diff 123456789 --to next
 ```
 
-For humans, the diff prints as familiar `+`/`-` lines. In a structured format
-each line becomes a row with its operation, so you can post-process it:
+For humans, the diff prints as familiar `+`/`-` lines, and `-o csv` gives one
+row per line with its operation. With `-o json` you get the whole compare
+result: both endpoints (their page ids, revision ids, namespaces and titles),
+the raw HTML diff body, and the parsed lines, so nothing the API returned is
+lost:
 
 ```bash
-wiki diff 123456789 -o jsonl
+wiki diff 123456789 -o json
+wiki diff 123456789 -o csv      # one row per changed line
 ```
 
 ## A small workflow

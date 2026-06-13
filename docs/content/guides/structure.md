@@ -73,13 +73,18 @@ wiki langs "Alan Turing" -o jsonl | head
 
 ## Page info
 
-Metadata about a page: id, length, last touched, content model, language, and
-whether it is a redirect:
+Metadata about a page: id, namespace, length, last touched, content model,
+language, protection levels, and whether it is a redirect:
 
 ```bash
 wiki info "Alan Turing"
 wiki info "Alan Turing" -o json
 ```
+
+The `-o json` output is the full `prop=info` record: the namespace, the
+language and its html code and direction, the protection entries, the
+restriction types, the talk-page id, watchers, variant titles, and the edit,
+full and canonical URLs, so the original query result can be reconstructed.
 
 ## Citations
 

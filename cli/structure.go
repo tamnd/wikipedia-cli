@@ -337,6 +337,7 @@ func newInfoCmd(app *App) *cobra.Command {
 			}
 			rows := [][2]string{
 				{"pageid", itoa(info.Pageid)},
+				{"ns", itoa(info.NS)},
 				{"title", info.Title},
 				{"length", itoa(info.Length)},
 				{"touched", info.Touched},
@@ -344,6 +345,7 @@ func newInfoCmd(app *App) *cobra.Command {
 				{"contentmodel", info.ContentModel},
 				{"language", info.Lang},
 				{"redirect", boolWord(info.Redirect, "yes", "no")},
+				{"protection", protectionSummary(info.Protection)},
 				{"url", info.URL},
 			}
 			return emitKV(app, rows, info)
