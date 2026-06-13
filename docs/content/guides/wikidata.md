@@ -30,17 +30,25 @@ follows the article's `wikibase_item`):
 wiki entity "Albert Einstein" --title --props P569,P570
 ```
 
-`-o json` gives you the flattened entity for a pipeline:
+The table view flattens each claim to a single value in the language you pick
+with `--lang`. The structured output keeps the whole entity: every language's
+labels, descriptions, and aliases, and every statement with its qualifiers,
+references, rank, and full typed datavalue, plus sitelinks with their badges
+and the entity's `lastrevid` and `modified` stamp. Nothing the API returns is
+dropped, so you can rebuild the original record from the JSON:
 
 ```bash
 wiki entity Q937 -o json
+wiki entity Q937 -o json | jq '.claims.P569[0].mainsnak.datavalue.value'
 ```
 
 ## SPARQL
 
 Run any query against the Wikidata Query Service. The query can be inline, read
-from a file with `@path`, or read from stdin with `-`. Entity URIs in the
-result are shortened to bare Q/P ids:
+from a file with `@path`, or read from stdin with `-`. In the table view entity
+URIs are shortened to bare Q/P ids; `-o json` keeps each binding's full value
+along with its RDF term type, language tag, and datatype, so a literal is never
+confused with a URI:
 
 ```bash
 wiki sparql 'SELECT ?city ?pop WHERE { ?city wdt:P31 wd:Q515; wdt:P1082 ?pop } ORDER BY DESC(?pop) LIMIT 10'
