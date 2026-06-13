@@ -2,19 +2,84 @@ package wiki
 
 import (
 	"context"
+	"encoding/json"
 	"net/url"
 	"sort"
 	"strconv"
 	"strings"
 )
 
-// Entity is a flattened Wikidata entity.
+// Entity is a Wikidata entity with its full structure preserved. The JSON
+// encoding mirrors the wbgetentities response, so labels, descriptions,
+// aliases, statements (with qualifiers, references and ranks), sitelinks and
+// the entity datatype all survive a round trip.
 type Entity struct {
-	ID          string              `json:"id"`
-	Label       string              `json:"label"`
-	Description string              `json:"description,omitempty"`
-	Aliases     []string            `json:"aliases,omitempty"`
-	Claims      map[string][]string `json:"claims,omitempty"`
+	ID           string                 `json:"id"`
+	PageID       int                    `json:"pageid,omitempty"`
+	NS           int                    `json:"ns,omitempty"`
+	Title        string                 `json:"title,omitempty"`
+	Type         string                 `json:"type,omitempty"`
+	Datatype     string                 `json:"datatype,omitempty"`
+	Labels       map[string]TermValue   `json:"labels,omitempty"`
+	Descriptions map[string]TermValue   `json:"descriptions,omitempty"`
+	Aliases      map[string][]TermValue `json:"aliases,omitempty"`
+	Claims       map[string][]Statement `json:"claims,omitempty"`
+	Sitelinks    map[string]Sitelink    `json:"sitelinks,omitempty"`
+	LastRevID    int                    `json:"lastrevid,omitempty"`
+	Modified     string                 `json:"modified,omitempty"`
+
+	// missing is set by wbgetentities for an unknown id; never emitted.
+	missing *string
+}
+
+// TermValue is a language-tagged label, description or alias.
+type TermValue struct {
+	Language string `json:"language"`
+	Value    string `json:"value"`
+}
+
+// Statement is one claim on an entity, with its rank, qualifiers and
+// references intact.
+type Statement struct {
+	ID              string            `json:"id,omitempty"`
+	Type            string            `json:"type,omitempty"`
+	Rank            string            `json:"rank,omitempty"`
+	Mainsnak        Snak              `json:"mainsnak"`
+	Qualifiers      map[string][]Snak `json:"qualifiers,omitempty"`
+	QualifiersOrder []string          `json:"qualifiers-order,omitempty"`
+	References      []Reference       `json:"references,omitempty"`
+}
+
+// Snak is a property-value assertion. Datavalue is kept as raw JSON so the
+// full value structure (time precision, quantity bounds, coordinate globe,
+// monolingual language) survives; ValueString renders a short form on demand.
+type Snak struct {
+	SnakType  string     `json:"snaktype"`
+	Property  string     `json:"property"`
+	Hash      string     `json:"hash,omitempty"`
+	Datatype  string     `json:"datatype,omitempty"`
+	Datavalue *Datavalue `json:"datavalue,omitempty"`
+}
+
+// Datavalue is the typed value of a snak.
+type Datavalue struct {
+	Type  string          `json:"type"`
+	Value json.RawMessage `json:"value"`
+}
+
+// Reference is a citation attached to a statement.
+type Reference struct {
+	Hash       string            `json:"hash,omitempty"`
+	Snaks      map[string][]Snak `json:"snaks,omitempty"`
+	SnaksOrder []string          `json:"snaks-order,omitempty"`
+}
+
+// Sitelink connects an entity to a page on a Wikimedia site.
+type Sitelink struct {
+	Site   string   `json:"site"`
+	Title  string   `json:"title"`
+	Badges []string `json:"badges,omitempty"`
+	URL    string   `json:"url,omitempty"`
 }
 
 // wikidataClient returns a Client bound to www.wikidata.org, reusing the same
@@ -30,23 +95,22 @@ func (c *Client) wikidataClient() (*Client, error) {
 	return &Client{Site: site, HTTP: c.HTTP, Cfg: cfg}, nil
 }
 
-// EntityByID fetches and flattens a Wikidata entity (Q… or P… id).
+// EntityByID fetches a Wikidata entity (Q… or P… id) in full. props, when set,
+// restricts the claims to those property ids; everything else is always kept.
 func (c *Client) EntityByID(ctx context.Context, id, lang string, props []string) (*Entity, error) {
 	wd, err := c.wikidataClient()
 	if err != nil {
 		return nil, err
 	}
-	if lang == "" {
-		lang = firstNonEmpty(c.Cfg.Lang, "en")
-	}
 	v := wd.actionParams()
 	v.Set("action", "wbgetentities")
 	v.Set("ids", id)
-	v.Set("languages", lang)
-	v.Set("props", "labels|descriptions|aliases|claims")
+	// No languages filter: keep every language so the JSON is a full record.
+	// lang only chooses which language the flattened display fields use.
+	v.Set("props", "labels|descriptions|aliases|claims|sitelinks/urls|datatype")
 	var resp struct {
 		apiError
-		Entities map[string]wbEntity `json:"entities"`
+		Entities map[string]*Entity `json:"entities"`
 	}
 	if err := wd.HTTP.GetJSON(ctx, wd.Site.APIURL(v), ttlContent, &resp); err != nil {
 		return nil, err
@@ -55,10 +119,43 @@ func (c *Client) EntityByID(ctx context.Context, id, lang string, props []string
 		return nil, err
 	}
 	e, ok := resp.Entities[id]
-	if !ok || e.Missing != nil {
+	if !ok || e == nil || e.missing != nil {
 		return nil, ErrNotFound
 	}
-	return e.flatten(id, lang, props), nil
+	e.restrictClaims(props)
+	return e, nil
+}
+
+// UnmarshalJSON detects the missing marker (wbgetentities emits "missing":"")
+// while decoding the rest of the entity normally.
+func (e *Entity) UnmarshalJSON(b []byte) error {
+	type alias Entity
+	aux := struct {
+		Missing *string `json:"missing"`
+		*alias
+	}{alias: (*alias)(e)}
+	if err := json.Unmarshal(b, &aux); err != nil {
+		return err
+	}
+	e.missing = aux.Missing
+	return nil
+}
+
+// restrictClaims drops every claim whose property id is not in props. An empty
+// props keeps all claims.
+func (e *Entity) restrictClaims(props []string) {
+	if len(props) == 0 || e.Claims == nil {
+		return
+	}
+	want := map[string]bool{}
+	for _, p := range props {
+		want[strings.ToUpper(strings.TrimSpace(p))] = true
+	}
+	for pid := range e.Claims {
+		if !want[pid] {
+			delete(e.Claims, pid)
+		}
+	}
 }
 
 // EntityByTitle resolves a Wikipedia title to its Wikidata entity, then fetches
@@ -93,98 +190,122 @@ func (c *Client) EntityByTitle(ctx context.Context, title, lang string, props []
 	return c.EntityByID(ctx, resp.Query.Pages[0].PageProps.Item, lang, props)
 }
 
-type wbEntity struct {
-	Missing *struct{} `json:"missing"`
-	Labels  map[string]struct {
-		Value string `json:"value"`
-	} `json:"labels"`
-	Descriptions map[string]struct {
-		Value string `json:"value"`
-	} `json:"descriptions"`
-	Aliases map[string][]struct {
-		Value string `json:"value"`
-	} `json:"aliases"`
-	Claims map[string][]struct {
-		Mainsnak struct {
-			Datavalue struct {
-				Type  string `json:"type"`
-				Value any    `json:"value"`
-			} `json:"datavalue"`
-		} `json:"mainsnak"`
-	} `json:"claims"`
-}
+// LabelFor returns the label in lang, falling back to any available language.
+func (e *Entity) LabelFor(lang string) string { return pickTerm(e.Labels, lang) }
 
-func (e wbEntity) flatten(id, lang string, props []string) *Entity {
-	out := &Entity{ID: id, Claims: map[string][]string{}}
-	if l, ok := e.Labels[lang]; ok {
-		out.Label = l.Value
-	} else {
-		for _, l := range e.Labels {
-			out.Label = l.Value
-			break
-		}
-	}
-	if d, ok := e.Descriptions[lang]; ok {
-		out.Description = d.Value
-	}
-	for _, as := range e.Aliases[lang] {
-		out.Aliases = append(out.Aliases, as.Value)
-	}
-	want := map[string]bool{}
-	for _, p := range props {
-		want[strings.ToUpper(strings.TrimSpace(p))] = true
-	}
-	for pid, claims := range e.Claims {
-		if len(want) > 0 && !want[pid] {
-			continue
-		}
-		for _, cl := range claims {
-			out.Claims[pid] = append(out.Claims[pid], snakValue(cl.Mainsnak.Datavalue.Type, cl.Mainsnak.Datavalue.Value))
-		}
+// DescriptionFor returns the description in lang, falling back to any language.
+func (e *Entity) DescriptionFor(lang string) string { return pickTerm(e.Descriptions, lang) }
+
+// AliasesFor returns the aliases in lang, or none if that language has no set.
+func (e *Entity) AliasesFor(lang string) []string {
+	var out []string
+	for _, a := range e.Aliases[lang] {
+		out = append(out, a.Value)
 	}
 	return out
 }
 
-// snakValue renders a Wikidata datavalue into a short string.
-func snakValue(typ string, val any) string {
-	switch v := val.(type) {
-	case string:
-		return v
-	case map[string]any:
-		switch typ {
-		case "wikibase-entityid":
-			if id, ok := v["id"].(string); ok {
-				return id
-			}
-		case "time":
-			if t, ok := v["time"].(string); ok {
-				return strings.TrimPrefix(t, "+")
-			}
-		case "quantity":
-			if a, ok := v["amount"].(string); ok {
-				return strings.TrimPrefix(a, "+")
-			}
-		case "globecoordinate":
-			lat, _ := v["latitude"].(float64)
-			lon, _ := v["longitude"].(float64)
-			return formatFloat(lat) + "," + formatFloat(lon)
-		case "monolingualtext":
-			if t, ok := v["text"].(string); ok {
-				return t
-			}
-		}
+func pickTerm(m map[string]TermValue, lang string) string {
+	if t, ok := m[lang]; ok {
+		return t.Value
+	}
+	if t, ok := m["en"]; ok {
+		return t.Value
+	}
+	// Deterministic fallback: the lowest language code present.
+	langs := make([]string, 0, len(m))
+	for l := range m {
+		langs = append(langs, l)
+	}
+	sort.Strings(langs)
+	if len(langs) > 0 {
+		return m[langs[0]].Value
 	}
 	return ""
 }
 
-// SPARQLResult holds the column order and rows of a flattened SPARQL response.
-type SPARQLResult struct {
-	Vars []string
-	Rows []map[string]string
+// ValueString renders a snak's value into a short string for table output.
+// novalue/somevalue snaks render as "(no value)" / "(unknown value)".
+func (s Snak) ValueString() string {
+	switch s.SnakType {
+	case "novalue":
+		return "(no value)"
+	case "somevalue":
+		return "(unknown value)"
+	}
+	if s.Datavalue == nil {
+		return ""
+	}
+	return datavalueString(s.Datavalue.Type, s.Datavalue.Value)
 }
 
-// SPARQL runs a query against the Wikidata Query Service and flattens the JSON
-// results into rows keyed by SELECT variable.
+func datavalueString(typ string, raw json.RawMessage) string {
+	switch typ {
+	case "string":
+		var str string
+		if json.Unmarshal(raw, &str) == nil {
+			return str
+		}
+	case "wikibase-entityid":
+		var v struct {
+			ID string `json:"id"`
+		}
+		if json.Unmarshal(raw, &v) == nil {
+			return v.ID
+		}
+	case "time":
+		var v struct {
+			Time string `json:"time"`
+		}
+		if json.Unmarshal(raw, &v) == nil {
+			return strings.TrimPrefix(v.Time, "+")
+		}
+	case "quantity":
+		var v struct {
+			Amount string `json:"amount"`
+		}
+		if json.Unmarshal(raw, &v) == nil {
+			return strings.TrimPrefix(v.Amount, "+")
+		}
+	case "globecoordinate":
+		var v struct {
+			Latitude  float64 `json:"latitude"`
+			Longitude float64 `json:"longitude"`
+		}
+		if json.Unmarshal(raw, &v) == nil {
+			return formatFloat(v.Latitude) + "," + formatFloat(v.Longitude)
+		}
+	case "monolingualtext":
+		var v struct {
+			Text string `json:"text"`
+		}
+		if json.Unmarshal(raw, &v) == nil {
+			return v.Text
+		}
+	}
+	// Unknown type: return the raw JSON so nothing is silently lost.
+	return strings.TrimSpace(string(raw))
+}
+
+// SPARQLBinding is one cell of a SPARQL result: its RDF term kind, value, and
+// optional language tag or datatype.
+type SPARQLBinding struct {
+	Type     string `json:"type"`
+	Value    string `json:"value"`
+	XMLLang  string `json:"xml:lang,omitempty"`
+	Datatype string `json:"datatype,omitempty"`
+}
+
+// SPARQLResult holds the column order and rows of a SPARQL response. Each row
+// maps a SELECT variable to its full binding.
+type SPARQLResult struct {
+	Vars []string                   `json:"vars"`
+	Rows []map[string]SPARQLBinding `json:"rows"`
+}
+
+// SPARQL runs a query against the Wikidata Query Service and returns the rows
+// keyed by SELECT variable, preserving each binding's type, language and
+// datatype.
 func (c *Client) SPARQL(ctx context.Context, query string) (*SPARQLResult, error) {
 	v := url.Values{}
 	v.Set("query", query)
@@ -195,22 +316,13 @@ func (c *Client) SPARQL(ctx context.Context, query string) (*SPARQLResult, error
 			Vars []string `json:"vars"`
 		} `json:"head"`
 		Results struct {
-			Bindings []map[string]struct {
-				Value string `json:"value"`
-			} `json:"bindings"`
+			Bindings []map[string]SPARQLBinding `json:"bindings"`
 		} `json:"results"`
 	}
 	if err := c.HTTP.GetJSON(ctx, u, ttlSearch, &resp); err != nil {
 		return nil, err
 	}
-	out := &SPARQLResult{Vars: resp.Head.Vars}
-	for _, b := range resp.Results.Bindings {
-		row := map[string]string{}
-		for k, cell := range b {
-			row[k] = shortenURI(cell.Value)
-		}
-		out.Rows = append(out.Rows, row)
-	}
+	out := &SPARQLResult{Vars: resp.Head.Vars, Rows: resp.Results.Bindings}
 	if len(out.Vars) == 0 {
 		// Fall back to sorted keys from the first row.
 		seen := map[string]bool{}
@@ -227,8 +339,9 @@ func (c *Client) SPARQL(ctx context.Context, query string) (*SPARQLResult, error
 	return out, nil
 }
 
-// shortenURI collapses a Wikidata entity URI to its bare Q/P id.
-func shortenURI(s string) string {
+// ShortenURI collapses a Wikidata entity or property URI to its bare Q/P id for
+// compact display. The full URI is always kept in the structured output.
+func ShortenURI(s string) string {
 	for _, prefix := range []string{
 		"http://www.wikidata.org/entity/",
 		"http://www.wikidata.org/prop/direct/",
@@ -238,13 +351,6 @@ func shortenURI(s string) string {
 		}
 	}
 	return s
-}
-
-func firstNonEmpty(a, b string) string {
-	if a != "" {
-		return a
-	}
-	return b
 }
 
 func formatFloat(f float64) string {

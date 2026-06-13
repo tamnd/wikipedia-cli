@@ -45,10 +45,17 @@ Examples:
 			if err != nil {
 				return wrapErr(err)
 			}
-			return emitEntity(app, ent)
+			displayLang := lang
+			if displayLang == "" {
+				displayLang = c.Cfg.Lang
+			}
+			if displayLang == "" {
+				displayLang = "en"
+			}
+			return emitEntity(app, ent, displayLang)
 		},
 	}
-	cmd.Flags().StringVar(&lang, "lang", "", "label/description language (default wiki lang)")
+	cmd.Flags().StringVar(&lang, "lang", "", "language for the flattened table view (JSON keeps all languages)")
 	cmd.Flags().StringVar(&props, "props", "", "comma-separated property ids to include")
 	cmd.Flags().BoolVar(&byTitle, "title", false, "treat the argument as an article title")
 	return cmd
@@ -72,7 +79,7 @@ func looksLikeEntityID(s string) bool {
 	return true
 }
 
-func emitEntity(app *App, e *wiki.Entity) error {
+func emitEntity(app *App, e *wiki.Entity, lang string) error {
 	if app.Out.Format() == FormatJSON || app.Out.Format() == FormatJSONL {
 		if err := app.Out.Emit(Row{Cols: []string{"value"}, Vals: []string{""}, Value: e}); err != nil {
 			return err
@@ -81,9 +88,9 @@ func emitEntity(app *App, e *wiki.Entity) error {
 	}
 	rows := [][2]string{
 		{"id", e.ID},
-		{"label", e.Label},
-		{"description", e.Description},
-		{"aliases", strings.Join(e.Aliases, ", ")},
+		{"label", e.LabelFor(lang)},
+		{"description", e.DescriptionFor(lang)},
+		{"aliases", strings.Join(e.AliasesFor(lang), ", ")},
 	}
 	pids := make([]string, 0, len(e.Claims))
 	for p := range e.Claims {
@@ -91,7 +98,11 @@ func emitEntity(app *App, e *wiki.Entity) error {
 	}
 	sort.Strings(pids)
 	for _, p := range pids {
-		rows = append(rows, [2]string{p, strings.Join(e.Claims[p], ", ")})
+		vals := make([]string, 0, len(e.Claims[p]))
+		for _, st := range e.Claims[p] {
+			vals = append(vals, st.Mainsnak.ValueString())
+		}
+		rows = append(rows, [2]string{p, strings.Join(vals, ", ")})
 	}
 	for _, r := range rows {
 		if err := app.Out.Emit(Row{
@@ -111,7 +122,8 @@ func newSPARQLCmd(app *App) *cobra.Command {
 		Short: "Run a SPARQL query against the Wikidata Query Service",
 		Long: `Run a SPARQL query against the Wikidata Query Service and print the result
 rows. The query may be given inline, read from a file with @path, or from
-stdin with '-'. Entity URIs are shortened to bare Q/P ids.
+stdin with '-'. Entity URIs are shortened to bare Q/P ids in the table view;
+-o json keeps each binding's full value, term type, language and datatype.
 
 Examples:
   wiki sparql 'SELECT ?c ?p WHERE { ?c wdt:P31 wd:Q515; wdt:P1082 ?p } ORDER BY DESC(?p) LIMIT 10'
@@ -136,7 +148,7 @@ Examples:
 			for _, row := range res.Rows {
 				vals := make([]string, len(res.Vars))
 				for i, v := range res.Vars {
-					vals[i] = row[v]
+					vals[i] = wiki.ShortenURI(row[v].Value)
 				}
 				if err := app.Out.Emit(Row{Cols: res.Vars, Vals: vals, Value: row}); err != nil {
 					return err
