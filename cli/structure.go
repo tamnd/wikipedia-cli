@@ -213,7 +213,7 @@ func downloadMedia(cmd *cobra.Command, app *App, c *wiki.Client, media []wiki.Me
 			fmt.Fprintf(os.Stderr, "wiki: %s: %v\n", filepath.Base(m.URL), err)
 			continue
 		}
-		fmt.Fprintln(cmdOut, path)
+		_, _ = fmt.Fprintln(cmdOut, path)
 	}
 	return nil
 }

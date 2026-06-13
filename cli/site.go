@@ -19,10 +19,6 @@ func newSitesCmd(app *App) *cobra.Command {
 so you can discover what --project, --site and -l accept.`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			lang := app.Cfg.Lang
-			if lang == "" {
-				lang = "en"
-			}
 			for _, p := range wiki.Projects() {
 				cfg := app.Cfg
 				cfg.Project = p

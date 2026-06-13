@@ -79,7 +79,7 @@ Examples:
 				count++
 
 				if outDir == "" {
-					fmt.Fprintf(cmdOut, "# %s\n\n%s\n\n", p.Title, body)
+					_, _ = fmt.Fprintf(cmdOut, "# %s\n\n%s\n\n", p.Title, body)
 				} else {
 					dest := shardPath(outDir, p.Title, ext)
 					if err := writeArticle(dest, p.Title, body, ext); err != nil {

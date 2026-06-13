@@ -110,7 +110,7 @@ Examples:
 				}
 				fmt.Fprintf(os.Stderr, "sha1 ok\n")
 			}
-			fmt.Fprintln(cmdOut, path)
+			_, _ = fmt.Fprintln(cmdOut, path)
 			return nil
 		},
 	}

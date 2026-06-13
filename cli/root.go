@@ -184,8 +184,6 @@ func (a *App) Client() (*wiki.Client, error) {
 
 // exit code helpers ---------------------------------------------------------
 
-type exitCoder interface{ ExitCode() int }
-
 type codedError struct {
 	err  error
 	code int
