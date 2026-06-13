@@ -80,6 +80,19 @@ func boolWord(b bool, yes, no string) string {
 	return no
 }
 
+// protectionSummary renders the protection levels as a compact "edit=sysop,
+// move=autoconfirmed" string for the table view. The full list survives in JSON.
+func protectionSummary(p []wiki.Protection) string {
+	if len(p) == 0 {
+		return "none"
+	}
+	parts := make([]string, 0, len(p))
+	for _, pr := range p {
+		parts = append(parts, pr.Type+"="+pr.Level)
+	}
+	return strings.Join(parts, ",")
+}
+
 // resolveTarget parses a positional argument that may be a bare title or a
 // pasted Wikipedia URL. When it is a URL on a different host, a client bound to
 // that host is returned so the lookup hits the right wiki.

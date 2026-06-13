@@ -56,6 +56,11 @@ wiki summary "Quantum computing"
 wiki summary "Quantum computing" -o json
 ```
 
+The `-o json` output is the full REST summary: the display and normalized
+titles, the namespace, the wikibase item, the thumbnail and original image, the
+desktop and mobile URLs, the revision stamp, the HTML extract and the
+coordinates, all preserved exactly as the API returned them.
+
 ## Targets: titles and URLs
 
 The argument can be a bare title, a quoted title with spaces, an underscore

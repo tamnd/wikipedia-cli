@@ -79,25 +79,31 @@ Examples:
 			if target == "" {
 				target = "prev"
 			}
-			lines, err := c.Diff(cmd.Context(), from, target)
+			diff, err := c.Diff(cmd.Context(), from, target)
 			if err != nil {
 				return wrapErr(err)
 			}
-			if len(lines) == 0 {
+			if len(diff.Lines) == 0 && diff.Body == "" {
 				return noResults("no differences")
 			}
-			return emitDiff(app, lines)
+			return emitDiff(app, diff)
 		},
 	}
 	cmd.Flags().StringVar(&to, "to", "", "compare against prev|next|cur or a revid")
 	return cmd
 }
 
-// emitDiff prints diff lines, as colored +/- text for humans or rows for data.
-func emitDiff(app *App, lines []wiki.DiffLine) error {
+// emitDiff prints the diff: the whole compare result for json, per-line rows
+// for csv/tsv, and colored +/- text for humans.
+func emitDiff(app *App, diff *wiki.Diff) error {
 	switch app.Out.Format() {
-	case FormatJSON, FormatJSONL, FormatCSV, FormatTSV:
-		for _, l := range lines {
+	case FormatJSON, FormatJSONL:
+		if err := app.Out.Emit(Row{Cols: []string{"value"}, Vals: []string{""}, Value: diff}); err != nil {
+			return err
+		}
+		return app.Out.Flush()
+	case FormatCSV, FormatTSV:
+		for _, l := range diff.Lines {
 			if err := app.Out.Emit(Row{
 				Cols:  []string{"op", "text"},
 				Vals:  []string{l.Op, l.Text},
@@ -108,7 +114,7 @@ func emitDiff(app *App, lines []wiki.DiffLine) error {
 		}
 		return app.Out.Flush()
 	}
-	for _, l := range lines {
+	for _, l := range diff.Lines {
 		var prefix string
 		switch l.Op {
 		case "add":

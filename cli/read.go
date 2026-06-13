@@ -229,7 +229,7 @@ func newOpenCmd(app *App) *cobra.Command {
 func summaryRow(s *wiki.Summary) Row {
 	return Row{
 		Cols:  []string{"title", "description", "extract", "type", "lang", "url"},
-		Vals:  []string{s.Title, s.Description, s.Extract, s.Type, s.Lang, s.URL},
+		Vals:  []string{s.Title, s.Description, s.Extract, s.Type, s.Lang, s.URL()},
 		Value: s,
 	}
 }
