@@ -1,0 +1,10 @@
+title       = "wiki"
+baseURL     = "https://wikipedia-cli.tamnd.com/"
+description = "A fast, friendly command line for Wikipedia. One binary that reads articles as text or Markdown, searches full text, pulls summaries, walks links and categories, queries Wikidata with SPARQL, fetches pageview metrics, and streams the public XML dumps."
+contentDir  = "content"
+outputDir   = "public"
+theme       = "tago-doks"
+syntaxHighlight = "true"
+
+[params]
+github = "https://github.com/tamnd/wikipedia-cli"
