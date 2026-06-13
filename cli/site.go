@@ -101,7 +101,7 @@ Examples:
 			if err != nil {
 				return wrapErr(err)
 			}
-			out, err := convertContent(src, from, to)
+			out, err := convertContent(src, from, to, app.Cfg.Lang)
 			if err != nil {
 				return usageErr(err.Error())
 			}
@@ -114,20 +114,30 @@ Examples:
 	return cmd
 }
 
-func convertContent(src, from, to string) (string, error) {
-	html := src
-	if strings.ToLower(from) == "wikitext" {
-		// Wrap wikitext so the renderers treat it as preformatted text.
-		html = "<pre>" + src + "</pre>"
+func convertContent(src, from, to, lang string) (string, error) {
+	if lang == "" {
+		lang = "en"
 	}
+	wikitext := strings.EqualFold(from, "wikitext")
 	switch strings.ToLower(to) {
 	case "markdown", "md":
-		return wiki.HTMLToMarkdown(html), nil
+		if wikitext {
+			return wiki.WikitextToMarkdown(src, lang), nil
+		}
+		return wiki.HTMLToMarkdown(src), nil
 	case "json":
-		text := wiki.HTMLToText(html)
+		var text string
+		if wikitext {
+			text = wiki.WikitextToText(src)
+		} else {
+			text = wiki.HTMLToText(src)
+		}
 		return toJSONString(map[string]string{"text": text}), nil
 	case "text", "txt", "":
-		return wiki.HTMLToText(html), nil
+		if wikitext {
+			return wiki.WikitextToText(src), nil
+		}
+		return wiki.HTMLToText(src), nil
 	default:
 		return "", fmt.Errorf("unknown --to %q (want text|markdown|json)", to)
 	}
