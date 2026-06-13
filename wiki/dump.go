@@ -1,6 +1,7 @@
 package wiki
 
 import (
+	"bufio"
 	"compress/bzip2"
 	"compress/gzip"
 	"context"
@@ -10,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -171,45 +173,100 @@ type DumpPage struct {
 	Title     string `json:"title"`
 	RevID     int    `json:"revid"`
 	Timestamp string `json:"timestamp"`
+	Redirect  bool   `json:"redirect,omitempty"`
 	Text      string `json:"text,omitempty"`
 }
 
 // StreamPages parses a local pages-articles XML dump (optionally bz2/gz) and
 // calls fn for each page in constant memory. Return an error from fn to stop.
 // namespace >= 0 filters to that namespace; withText includes the body.
+//
+// For .bz2 dumps it prefers the parallel lbzip2/pbzip2 binaries when they are on
+// PATH (several times faster than Go's single-threaded decompressor), falling
+// back to the standard library otherwise.
 func StreamPages(path string, namespace int, withText bool, fn func(DumpPage) error) error {
-	f, err := os.Open(path)
+	rc, err := openDumpReader(path)
 	if err != nil {
 		return err
 	}
-	defer func() { _ = f.Close() }()
+	defer func() { _ = rc.Close() }()
+	return streamPagesReader(rc, namespace, withText, fn)
+}
 
-	var r io.Reader = f
+// openDumpReader returns a decompressed reader for a dump file.
+func openDumpReader(path string) (io.ReadCloser, error) {
 	switch {
 	case strings.HasSuffix(path, ".bz2"):
-		r = bzip2.NewReader(f)
+		return openBzip2(path)
 	case strings.HasSuffix(path, ".gz"):
-		gz, err := gzip.NewReader(f)
+		f, err := os.Open(path)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		defer func() { _ = gz.Close() }()
-		r = gz
+		gz, err := gzip.NewReader(bufio.NewReaderSize(f, 1<<20))
+		if err != nil {
+			_ = f.Close()
+			return nil, err
+		}
+		return readCloser{Reader: gz, close: func() error { _ = gz.Close(); return f.Close() }}, nil
+	default:
+		return os.Open(path)
 	}
-	return streamPagesReader(r, namespace, withText, fn)
 }
+
+// openBzip2 prefers parallel lbzip2/pbzip2, then falls back to the stdlib.
+func openBzip2(path string) (io.ReadCloser, error) {
+	for _, name := range []string{"lbzip2", "pbzip2", "bzip2"} {
+		if _, err := exec.LookPath(name); err != nil {
+			continue
+		}
+		cmd := exec.Command(name, "-dc", path)
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			return nil, err
+		}
+		if err := cmd.Start(); err != nil {
+			return nil, err
+		}
+		return readCloser{Reader: bufio.NewReaderSize(stdout, 1<<20), close: func() error {
+			_ = stdout.Close()
+			return cmd.Wait()
+		}}, nil
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	r := bzip2.NewReader(bufio.NewReaderSize(f, 1<<20))
+	return readCloser{Reader: r, close: f.Close}, nil
+}
+
+// readCloser adapts a reader plus a close func into an io.ReadCloser.
+type readCloser struct {
+	io.Reader
+	close func() error
+}
+
+func (rc readCloser) Close() error { return rc.close() }
 
 // errStop ends a stream early without surfacing as an error.
 var errStop = fmt.Errorf("stop")
 
 func streamPagesReader(r io.Reader, namespace int, withText bool, fn func(DumpPage) error) error {
 	dec := xml.NewDecoder(r)
+	// MediaWiki dumps occasionally carry non-UTF8 references and the compressed
+	// stream can end abruptly; tolerate both rather than aborting the run.
+	dec.Strict = false
+	dec.CharsetReader = func(_ string, in io.Reader) (io.Reader, error) { return in, nil }
 	for {
 		tok, err := dec.Token()
 		if err == io.EOF {
 			return nil
 		}
 		if err != nil {
+			if strings.Contains(err.Error(), "unexpected EOF") {
+				return nil
+			}
 			return err
 		}
 		se, ok := tok.(xml.StartElement)
@@ -217,9 +274,10 @@ func streamPagesReader(r io.Reader, namespace int, withText bool, fn func(DumpPa
 			continue
 		}
 		var page struct {
-			Title    string `xml:"title"`
-			NS       int    `xml:"ns"`
-			ID       int    `xml:"id"`
+			Title    string    `xml:"title"`
+			NS       int       `xml:"ns"`
+			ID       int       `xml:"id"`
+			Redirect *struct{} `xml:"redirect"`
 			Revision struct {
 				ID        int    `xml:"id"`
 				Timestamp string `xml:"timestamp"`
@@ -227,7 +285,7 @@ func streamPagesReader(r io.Reader, namespace int, withText bool, fn func(DumpPa
 			} `xml:"revision"`
 		}
 		if err := dec.DecodeElement(&page, &se); err != nil {
-			return err
+			continue // skip a malformed page rather than killing the stream
 		}
 		if namespace >= 0 && page.NS != namespace {
 			continue
@@ -235,6 +293,7 @@ func streamPagesReader(r io.Reader, namespace int, withText bool, fn func(DumpPa
 		dp := DumpPage{
 			ID: page.ID, NS: page.NS, Title: page.Title,
 			RevID: page.Revision.ID, Timestamp: page.Revision.Timestamp,
+			Redirect: page.Redirect != nil,
 		}
 		if withText {
 			dp.Text = page.Revision.Text
