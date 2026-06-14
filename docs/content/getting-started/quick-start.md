@@ -37,8 +37,9 @@ One clean paragraph, the same one Wikipedia shows in its preview cards.
 wiki search "turing machine"
 ```
 
-You get a table of matching titles with a snippet. CirrusSearch operators pass
-straight through:
+You get a readable list of matching titles, each with a snippet, colored on a
+terminal. Pass `-o table` for a grid you can scan one column down. CirrusSearch
+operators pass straight through:
 
 ```bash
 wiki search "incategory:Physics quantum"
@@ -91,5 +92,5 @@ wiki sparql 'SELECT ?c ?p WHERE { ?c wdt:P31 wd:Q515; wdt:P1082 ?p } ORDER BY DE
 - The [guides](/guides/) walk through each area in depth: reading, searching,
   page structure, history, feeds and metrics, geo, Wikidata, and dumps.
 - The [CLI reference](/reference/cli/) lists every command and flag.
-- [Output formats](/reference/output/) explains tables, JSON, CSV, URLs, and
-  templates.
+- [Output formats](/reference/output/) explains the list, table, Markdown,
+  JSON, CSV, URL, and template outputs, plus color and the spinner.

@@ -60,11 +60,13 @@ wiki summary "Berlin" -l de                    # German Wikipedia
 wiki read "café" --project wiktionary -l fr    # French Wiktionary
 ```
 
-The **output** is a table when you are at a terminal and JSONL when you pipe,
-so commands read well by eye and compose well in scripts. Switch any time with
-`-o`:
+The **output** is a readable list when you are at a terminal and JSONL when you
+pipe, so commands read well by eye and compose well in scripts. On a terminal
+the list is colored and a slow read shows a small progress spinner. Switch the
+format any time with `-o`:
 
 ```bash
+wiki search "physics" -o table
 wiki search "physics" -o json
 wiki links "Pi" -o url | head
 ```

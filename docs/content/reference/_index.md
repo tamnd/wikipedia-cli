@@ -12,7 +12,8 @@ knob and environment variable, the output contract, and the exit codes.
 - [CLI](/reference/cli/): every command, grouped by area, with its flags.
 - [Configuration](/reference/configuration/): flags, environment variables,
   paths, and the polite-client settings.
-- [Output formats](/reference/output/): table, json, jsonl, csv, tsv, url,
-  raw, and templates, plus `--fields` and `-n`.
+- [Output formats](/reference/output/): list, table, markdown, json, jsonl,
+  csv, tsv, url, raw, and templates, plus color, the spinner, `--fields`, and
+  `-n`.
 - [Troubleshooting](/reference/troubleshooting/): exit codes and common
   fixes.
