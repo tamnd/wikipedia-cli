@@ -30,11 +30,13 @@ Examples:
 				return err
 			}
 			var links []wiki.Link
+			sp := app.progress("fetching links")
 			if external {
 				links, err = c.ExternalLinks(cmd.Context(), title, app.Limit)
 			} else {
 				links, err = c.Links(cmd.Context(), title, namespace, app.Limit)
 			}
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}
@@ -58,7 +60,9 @@ func newBacklinksCmd(app *App) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			sp := app.progress("fetching backlinks")
 			links, err := c.Backlinks(cmd.Context(), title, namespace, app.Limit)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}
@@ -98,7 +102,9 @@ func newCategoriesCmd(app *App) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			sp := app.progress("fetching categories")
 			cats, err := c.Categories(cmd.Context(), title, app.Limit)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}
@@ -137,7 +143,9 @@ Examples:
 			if err != nil {
 				return err
 			}
+			sp := app.progress("fetching members")
 			members, err := c.CategoryMembers(cmd.Context(), args[0], memberType, app.Limit)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}
@@ -179,7 +187,9 @@ Examples:
 			if err != nil {
 				return err
 			}
+			sp := app.progress("fetching media")
 			media, err := c.Media(cmd.Context(), title, app.Limit)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}
@@ -229,7 +239,9 @@ func newReferencesCmd(app *App) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			sp := app.progress("fetching references")
 			links, err := c.ExternalLinks(cmd.Context(), title, app.Limit)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}
@@ -252,7 +264,9 @@ format: bibtex, ris, mla, or apa.`,
 			if err != nil {
 				return err
 			}
+			sp := app.progress("fetching page info")
 			info, err := c.Info(cmd.Context(), title)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}
@@ -299,7 +313,9 @@ func newLangsCmd(app *App) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			sp := app.progress("fetching language links")
 			links, err := c.LangLinks(cmd.Context(), title, app.Limit)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}
@@ -331,13 +347,15 @@ func newInfoCmd(app *App) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			sp := app.progress("fetching page info")
 			info, err := c.Info(cmd.Context(), title)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}
 			rows := [][2]string{
-				{"pageid", itoa(info.Pageid)},
 				{"title", info.Title},
+				{"pageid", itoa(info.Pageid)},
 				{"length", itoa(info.Length)},
 				{"touched", info.Touched},
 				{"lastrevid", itoa(info.LastRevID)},
@@ -352,12 +370,24 @@ func newInfoCmd(app *App) *cobra.Command {
 	return cmd
 }
 
-// emitKV renders a list of key/value pairs as rows; the whole value is attached
-// to the first row for json output.
+// emitKV renders a single entity's key/value pairs. json/jsonl marshal the whole
+// value; the list view collapses the pairs into one section (the first value is
+// the heading, the rest are bullets), which reads better than one section per
+// field; table, csv, tsv, and markdown keep the tall two-column key/value shape.
 func emitKV(app *App, rows [][2]string, value any) error {
 	switch app.Out.Format() {
 	case FormatJSON, FormatJSONL:
 		if err := app.Out.Emit(Row{Cols: []string{"value"}, Vals: []string{""}, Value: value}); err != nil {
+			return err
+		}
+		return app.Out.Flush()
+	case FormatList:
+		cols := make([]string, len(rows))
+		vals := make([]string, len(rows))
+		for i, r := range rows {
+			cols[i], vals[i] = r[0], r[1]
+		}
+		if err := app.Out.Emit(Row{Cols: cols, Vals: vals, Value: value}); err != nil {
 			return err
 		}
 		return app.Out.Flush()

@@ -30,7 +30,9 @@ Examples:
 			if err != nil {
 				return usageErr(err.Error())
 			}
+			sp := app.progress("searching nearby")
 			results, err := c.GeoSearch(cmd.Context(), lat, lon, radius, app.Limit)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}
@@ -57,7 +59,9 @@ Examples:
 			if err != nil {
 				return err
 			}
+			sp := app.progress("searching nearby")
 			results, err := c.GeoNear(cmd.Context(), title, radius, app.Limit)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}

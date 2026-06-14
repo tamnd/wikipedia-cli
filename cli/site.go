@@ -56,7 +56,9 @@ func newStatsCmd(app *App) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			sp := app.progress("fetching statistics")
 			s, err := c.Stats(cmd.Context())
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}

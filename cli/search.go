@@ -34,7 +34,9 @@ Examples:
 				return err
 			}
 			query := joinArgs(args)
+			sp := app.progress("searching")
 			results, err := c.Search(cmd.Context(), query, app.Limit)
+			sp.stop()
 			if err != nil {
 				return err
 			}
@@ -67,7 +69,9 @@ func newSuggestCmd(app *App) *cobra.Command {
 			if limit == 0 {
 				limit = 10
 			}
+			sp := app.progress("fetching suggestions")
 			results, err := c.Suggest(cmd.Context(), joinArgs(args), limit)
+			sp.stop()
 			if err != nil {
 				return err
 			}
@@ -104,7 +108,9 @@ func newRandomCmd(app *App) *cobra.Command {
 			if n == 0 {
 				n = 1
 			}
+			sp := app.progress("fetching random articles")
 			results, err := c.Random(cmd.Context(), n, namespace)
+			sp.stop()
 			if err != nil {
 				return err
 			}
@@ -130,7 +136,9 @@ func newRelatedCmd(app *App) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			sp := app.progress("fetching related pages")
 			results, err := c.Related(cmd.Context(), title)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}

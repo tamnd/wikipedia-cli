@@ -25,7 +25,9 @@ Examples:
 			if err != nil {
 				return err
 			}
+			sp := app.progress("fetching revisions")
 			revs, err := c.Revisions(cmd.Context(), title, app.Limit, user)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}
@@ -79,7 +81,9 @@ Examples:
 			if target == "" {
 				target = "prev"
 			}
+			sp := app.progress("fetching diff")
 			lines, err := c.Diff(cmd.Context(), from, target)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}
