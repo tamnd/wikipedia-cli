@@ -22,3 +22,5 @@ depend on each other.
 - [Geo](/guides/geo/): articles near a coordinate or near another article.
 - [Wikidata](/guides/wikidata/): entity lookups and SPARQL.
 - [Dumps](/guides/dumps/): list, download, and stream the public XML archives.
+- [Resource URIs](/guides/resource-uris/): use `wiki` as a driver so a host
+  program can address pages and categories as `wikipedia://` URIs.

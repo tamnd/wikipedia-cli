@@ -9,9 +9,9 @@ import (
 
 // Summary is the short REST page summary (the blob the mobile apps show).
 type Summary struct {
-	Title       string  `json:"title"`
+	Title       string  `json:"title" kit:"id"`
 	Description string  `json:"description,omitempty"`
-	Extract     string  `json:"extract"`
+	Extract     string  `json:"extract" kit:"body"`
 	Type        string  `json:"type,omitempty"`
 	Lang        string  `json:"lang,omitempty"`
 	URL         string  `json:"url"`

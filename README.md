@@ -77,6 +77,34 @@ wiki entity Q937                               # Wikidata
 wiki read https://en.wikipedia.org/wiki/Cat    # a pasted URL just works
 ```
 
+## Use it as a resource-URI driver
+
+The `wiki` package also ships a small driver that makes Wikipedia addressable as
+a resource URI, the way a database driver registers with `database/sql`. A host
+program such as [ant](https://github.com/tamnd/ant) blank-imports the package and
+gets `wikipedia://` URIs for free:
+
+```go
+import _ "github.com/tamnd/wikipedia-cli/wiki"
+```
+
+With the driver mounted, a page is a URI you can dereference, list, and follow:
+
+```bash
+ant get wikipedia://page/Alan_Turing       # the article summary
+ant cat wikipedia://page/Alan_Turing       # just the extract text
+ant ls  wikipedia://page/Alan_Turing       # the articles it links to
+ant ls  wikipedia://category/Computability # the articles in a category
+ant url wikipedia://page/Alan_Turing       # back to the live URL
+```
+
+The driver speaks the default English Wikipedia, where a bare title is
+unambiguous; the `wiki` binary is still the way to reach another language or
+project. Every listed link and category member is itself a `wikipedia://page/`
+URI, so a host can walk the graph. See the
+[driver guide](https://wikipedia-cli.tamnd.com/guides/resource-uris/) for the
+record shapes and the full URI grammar.
+
 ## Documentation
 
 Full docs live at <https://wikipedia-cli.tamnd.com>. Start with the
