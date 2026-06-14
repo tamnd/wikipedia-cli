@@ -43,7 +43,9 @@ Examples:
 			if err != nil {
 				return usageErr("date must be YYYY-MM-DD")
 			}
+			sp := app.progress("fetching featured feed")
 			feed, err := c.Featured(cmd.Context(), d)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}
@@ -117,7 +119,9 @@ Examples:
 			if err != nil {
 				return usageErr("date must be MM-DD or YYYY-MM-DD")
 			}
+			sp := app.progress("fetching events")
 			events, err := c.OnThisDayEvents(cmd.Context(), eventType, month, day)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}
@@ -182,7 +186,9 @@ Examples:
 			if err != nil {
 				return usageErr("date must be YYYY-MM-DD or YYYY-MM")
 			}
+			sp := app.progress("fetching top articles")
 			arts, err := c.Top(cmd.Context(), year, month, day, app.Limit)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}

@@ -107,7 +107,9 @@ Examples:
 			if err != nil {
 				return err
 			}
+			sp := app.progress("fetching article")
 			body, err := f.render(cmd, c, title)
+			sp.stop()
 			if err != nil {
 				return err
 			}
@@ -151,7 +153,9 @@ Examples:
 				}
 				jsonOut := app.Out.Format() == FormatJSON || app.Out.Format() == FormatJSONL
 				if jsonOut && !f.explicitForm() {
+					sp := app.progress("fetching summary")
 					s, err := c.GetSummary(cmd.Context(), title)
+					sp.stop()
 					if err != nil {
 						return wrapErr(err)
 					}
@@ -160,7 +164,9 @@ Examples:
 					}
 					continue
 				}
+				sp := app.progress("fetching article")
 				body, err := f.render(cmd, c, title)
+				sp.stop()
 				if err != nil {
 					return err
 				}
@@ -186,11 +192,14 @@ func newSummaryCmd(app *App) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			sp := app.progress("fetching summary")
 			s, err := c.GetSummary(cmd.Context(), title)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}
-			if app.Out.Format() != FormatTable && app.Out.Format() != FormatURL {
+			f := app.Out.Format()
+			if f != FormatList && f != FormatTable && f != FormatURL {
 				if err := app.Out.Emit(summaryRow(s)); err != nil {
 					return err
 				}

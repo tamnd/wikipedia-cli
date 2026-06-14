@@ -115,18 +115,18 @@ environment variables.
 | `-l, --lang` | Wiki language subdomain (default `en`). |
 | `--project` | Wikimedia project (default `wikipedia`). |
 | `--site` | Explicit wiki host; overrides `--lang`/`--project`. |
-| `-o, --output` | `table\|json\|jsonl\|csv\|tsv\|url\|raw` (default `auto`). |
-| `--fields` | Comma-separated columns to show. |
+| `-o, --output` | `list\|table\|markdown\|json\|jsonl\|csv\|tsv\|url\|raw` (default `auto`: `list` on a terminal, `jsonl` when piped). |
+| `--fields` | Comma-separated columns to keep, in order. |
 | `-n, --limit` | Max results (0 = API default). |
 | `--template` | Go text/template applied per row. |
-| `--no-header` | Omit the header row in table/csv output. |
+| `--no-header` | Omit the header row (csv/tsv/markdown) or section heading (list). |
 | `--data-dir` | Root data directory. |
 | `--rate` | Minimum delay between requests. |
 | `--retries` | Retry attempts on 429/5xx. |
 | `--timeout` | Per-request timeout. |
 | `--no-cache` | Bypass the on-disk cache. |
-| `--color` | `auto\|always\|never`. |
-| `-q, --quiet` | Suppress progress output. |
+| `--color` | Color output: `auto\|always\|never` (honors `NO_COLOR`). |
+| `-q, --quiet` | Suppress the progress spinner. |
 | `-v, --verbose` | Increase verbosity (repeatable). |
 | `-y, --yes` | Assume yes to prompts. |
 | `--ua` | Override the User-Agent. |

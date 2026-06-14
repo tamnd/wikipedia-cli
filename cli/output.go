@@ -1,222 +1,99 @@
 package cli
 
 import (
-	"encoding/csv"
-	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"strings"
-	"text/tabwriter"
-	"text/template"
 
+	"github.com/charmbracelet/x/term"
 	"github.com/mattn/go-isatty"
+	"github.com/tamnd/any-cli/kit/render"
 )
 
-// Format is an output encoding.
-type Format string
+// Format is an output encoding. It aliases kit's render.Format so the command
+// code keeps reading naturally (app.Out.Format() == FormatJSON) while the actual
+// rendering is the shared kit engine — the same one every tamnd/*-cli uses.
+type Format = render.Format
 
 const (
-	FormatAuto  Format = "auto"
-	FormatTable Format = "table"
-	FormatJSON  Format = "json"
-	FormatJSONL Format = "jsonl"
-	FormatCSV   Format = "csv"
-	FormatTSV   Format = "tsv"
-	FormatURL   Format = "url"
-	FormatRaw   Format = "raw"
+	FormatAuto     = render.Auto
+	FormatTable    = render.Table
+	FormatMarkdown = render.Markdown
+	FormatList     = render.List
+	FormatJSON     = render.JSON
+	FormatJSONL    = render.JSONL
+	FormatCSV      = render.CSV
+	FormatTSV      = render.TSV
+	FormatURL      = render.URL
+	FormatRaw      = render.Raw
 )
 
-// Row is one output record: an ordered set of named columns plus the original
-// value (used by json/jsonl and templates).
-type Row struct {
-	Cols  []string
-	Vals  []string
-	Value any
-}
+// Row is one output record: an ordered, curated column set (Cols/Vals) for the
+// list, table, csv, tsv, and url views plus the full typed value for json,
+// jsonl, raw, and template. It is kit's render.Record, so every row builder
+// feeds straight into the shared renderer with no per-format code of our own.
+type Row = render.Record
 
-// Output renders rows in the selected format. A single Output instance handles a
-// whole command run, so streaming formats can write incrementally.
-type Output struct {
-	format   Format
-	fields   []string
-	noHeader bool
-	template *template.Template
-	w        io.Writer
-
-	tw         *tabwriter.Writer
-	csvw       *csv.Writer
-	headerDone bool
-	jsonFirst  bool
-	jsonOpen   bool
-}
-
-func newOutput(g *globalFlags) *Output {
-	o := &Output{w: os.Stdout, noHeader: g.noHeader}
-	o.format = resolveFormat(g.output)
-	if g.fields != "" {
-		o.fields = splitComma(g.fields)
-	}
-	if g.template != "" {
-		o.template = template.Must(template.New("row").Parse(g.template + "\n"))
-		o.format = FormatRaw
-	}
-	return o
-}
-
-func resolveFormat(s string) Format {
-	switch Format(s) {
-	case FormatAuto, "":
-		if isatty.IsTerminal(os.Stdout.Fd()) {
-			return FormatTable
-		}
-		return FormatJSONL
-	default:
-		return Format(s)
-	}
-}
-
-// Format returns the resolved output format.
-func (o *Output) Format() Format { return o.format }
-
-// Emit renders one row.
-func (o *Output) Emit(r Row) error {
-	cols, vals := o.project(r)
-	switch o.format {
-	case FormatTable:
-		return o.emitTable(cols, vals)
-	case FormatCSV, FormatTSV:
-		return o.emitCSV(cols, vals)
-	case FormatJSONL:
-		return o.emitJSONL(r.Value)
-	case FormatJSON:
-		return o.emitJSON(r.Value)
-	case FormatURL:
-		return o.emitField(r, "url")
-	case FormatRaw:
-		if o.template != nil {
-			return o.template.Execute(o.w, r.Value)
-		}
-		return o.emitField(r, "")
-	default:
-		return o.emitJSONL(r.Value)
-	}
-}
-
-func (o *Output) project(r Row) (cols, vals []string) {
-	if len(o.fields) == 0 {
-		return r.Cols, r.Vals
-	}
-	idx := map[string]int{}
-	for i, c := range r.Cols {
-		idx[c] = i
-	}
-	for _, f := range o.fields {
-		cols = append(cols, f)
-		if i, ok := idx[f]; ok && i < len(r.Vals) {
-			vals = append(vals, r.Vals[i])
+// newRenderer builds the shared kit renderer over stdout from the global flags.
+// It differs from kit's default in one place: with no -o, wiki prints the
+// readable list/section view on a terminal (a table is a step away with
+// -o table) and jsonl when piped, so scripts stay machine-readable. An explicit
+// -o or --template always wins.
+func newRenderer(g *globalFlags) (*render.Renderer, error) {
+	isTTY := isatty.IsTerminal(os.Stdout.Fd())
+	format := render.Format(g.output)
+	if g.template == "" && (format == "" || format == FormatAuto) {
+		if isTTY {
+			format = FormatList
 		} else {
-			vals = append(vals, "")
+			format = FormatJSONL
 		}
 	}
-	return cols, vals
+	var fields []string
+	if g.fields != "" {
+		fields = splitComma(g.fields)
+	}
+	return render.New(render.Options{
+		Format:   format,
+		IsTTY:    isTTY,
+		Color:    colorEnabled(g.color, isTTY),
+		Fields:   fields,
+		NoHeader: g.noHeader,
+		Template: g.template,
+		Width:    termWidth(),
+		Writer:   os.Stdout,
+	})
 }
 
-func (o *Output) emitTable(cols, vals []string) error {
-	if o.tw == nil {
-		o.tw = tabwriter.NewWriter(o.w, 0, 0, 2, ' ', 0)
+// colorEnabled resolves --color against the terminal and the NO_COLOR
+// convention: auto colors only an interactive terminal, always forces it on,
+// never disables it. A pipe is not a terminal, so auto stays plain and
+// `wiki search x | jq` never sees an escape code.
+func colorEnabled(mode string, isTTY bool) bool {
+	switch mode {
+	case "always":
+		return true
+	case "never":
+		return false
+	default:
+		return isTTY && os.Getenv("NO_COLOR") == ""
 	}
-	if !o.headerDone && !o.noHeader {
-		if _, err := fmt.Fprintln(o.tw, strings.Join(upperAll(cols), "\t")); err != nil {
-			return err
-		}
-		o.headerDone = true
-	}
-	_, err := fmt.Fprintln(o.tw, strings.Join(vals, "\t"))
-	return err
 }
 
-func (o *Output) emitCSV(cols, vals []string) error {
-	if o.csvw == nil {
-		o.csvw = csv.NewWriter(o.w)
-		if o.format == FormatTSV {
-			o.csvw.Comma = '\t'
-		}
-	}
-	if !o.headerDone && !o.noHeader {
-		if err := o.csvw.Write(cols); err != nil {
-			return err
-		}
-		o.headerDone = true
-	}
-	return o.csvw.Write(vals)
-}
-
-func (o *Output) emitJSONL(v any) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-	_, err = fmt.Fprintln(o.w, string(b))
-	return err
-}
-
-func (o *Output) emitJSON(v any) error {
-	if !o.jsonOpen {
-		if _, err := fmt.Fprint(o.w, "["); err != nil {
-			return err
-		}
-		o.jsonOpen = true
-		o.jsonFirst = true
-	}
-	if !o.jsonFirst {
-		if _, err := fmt.Fprint(o.w, ","); err != nil {
-			return err
+// termWidth reports the terminal width in columns, or 0 when stdout is a pipe or
+// file. The renderer uses it to shrink a too-wide table; 0 leaves output at its
+// natural width, which is what a pipe wants. COLUMNS wins when set.
+func termWidth() int {
+	if v := os.Getenv("COLUMNS"); v != "" {
+		var n int
+		if _, err := fmt.Sscanf(v, "%d", &n); err == nil && n > 0 {
+			return n
 		}
 	}
-	o.jsonFirst = false
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
+	if w, _, err := term.GetSize(os.Stdout.Fd()); err == nil && w > 0 {
+		return w
 	}
-	_, err = fmt.Fprint(o.w, "\n  "+string(b))
-	return err
-}
-
-func (o *Output) emitField(r Row, field string) error {
-	if field == "" && len(r.Vals) > 0 {
-		_, err := fmt.Fprintln(o.w, r.Vals[0])
-		return err
-	}
-	for i, c := range r.Cols {
-		if c == field && i < len(r.Vals) {
-			_, err := fmt.Fprintln(o.w, r.Vals[i])
-			return err
-		}
-	}
-	return nil
-}
-
-// Flush finalises buffered formats. Call once at the end of a command.
-func (o *Output) Flush() error {
-	if o.tw != nil {
-		return o.tw.Flush()
-	}
-	if o.csvw != nil {
-		o.csvw.Flush()
-		return o.csvw.Error()
-	}
-	if o.jsonOpen {
-		_, err := fmt.Fprintln(o.w, "\n]")
-		return err
-	}
-	return nil
-}
-
-// Raw writes bytes straight to stdout (for content output).
-func (o *Output) Raw(b []byte) error {
-	_, err := o.w.Write(b)
-	return err
+	return 0
 }
 
 func splitComma(s string) []string {
@@ -225,14 +102,6 @@ func splitComma(s string) []string {
 		if p = strings.TrimSpace(p); p != "" {
 			out = append(out, p)
 		}
-	}
-	return out
-}
-
-func upperAll(in []string) []string {
-	out := make([]string, len(in))
-	for i, s := range in {
-		out[i] = strings.ToUpper(s)
 	}
 	return out
 }

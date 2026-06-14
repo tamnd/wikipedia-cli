@@ -32,7 +32,9 @@ Examples:
 			if err != nil {
 				return usageErr(err.Error())
 			}
+			sp := app.progress("fetching pageviews")
 			pts, err := c.Pageviews(cmd.Context(), title, granularity, access, agent, start, end)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}

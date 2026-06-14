@@ -37,11 +37,13 @@ Examples:
 			}
 			arg := args[0]
 			var ent *wiki.Entity
+			sp := app.progress("fetching entity")
 			if byTitle || !looksLikeEntityID(arg) {
 				ent, err = c.EntityByTitle(cmd.Context(), arg, lang, propList)
 			} else {
 				ent, err = c.EntityByID(cmd.Context(), strings.ToUpper(arg), lang, propList)
 			}
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}
@@ -80,12 +82,6 @@ func looksLikeEntityID(s string) bool {
 }
 
 func emitEntity(app *App, e *wiki.Entity, lang string) error {
-	if app.Out.Format() == FormatJSON || app.Out.Format() == FormatJSONL {
-		if err := app.Out.Emit(Row{Cols: []string{"value"}, Vals: []string{""}, Value: e}); err != nil {
-			return err
-		}
-		return app.Out.Flush()
-	}
 	rows := [][2]string{
 		{"id", e.ID},
 		{"label", e.LabelFor(lang)},
@@ -104,16 +100,7 @@ func emitEntity(app *App, e *wiki.Entity, lang string) error {
 		}
 		rows = append(rows, [2]string{p, strings.Join(vals, ", ")})
 	}
-	for _, r := range rows {
-		if err := app.Out.Emit(Row{
-			Cols:  []string{"key", "value"},
-			Vals:  []string{r[0], r[1]},
-			Value: map[string]string{"key": r[0], "value": r[1]},
-		}); err != nil {
-			return err
-		}
-	}
-	return app.Out.Flush()
+	return emitKV(app, rows, e)
 }
 
 func newSPARQLCmd(app *App) *cobra.Command {
@@ -138,7 +125,9 @@ Examples:
 			if err != nil {
 				return usageErr(err.Error())
 			}
+			sp := app.progress("running query")
 			res, err := c.SPARQL(cmd.Context(), query)
+			sp.stop()
 			if err != nil {
 				return wrapErr(err)
 			}

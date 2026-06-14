@@ -63,10 +63,13 @@ SBOMs and a cosign signature are attached to every
   Markdown (or text), one file per article, parsing wikitext and keeping code
   blocks, headings, and links while dropping template and reference chrome.
 
-Every command shares one output contract: `-o table` (the default on a
-terminal), `json`, `jsonl` (the default in a pipe), `csv`, `tsv`, `url`, and Go
-`--template`. Pick columns with `--fields`, cap results with `-n`, and target
-any wiki with `-l/--lang`, `--project`, or `--site`.
+Every command shares one output contract: a readable `list` (the default on a
+terminal), `table`, `markdown`, `json`, `jsonl` (the default in a pipe), `csv`,
+`tsv`, `url`, and Go `--template`. On a terminal the output is colored and a
+small spinner marks a slow read while it waits on the network; pipe it and the
+spinner is gone and the bytes are plain. Pick columns with `--fields`, cap
+results with `-n`, and target any wiki with `-l/--lang`, `--project`, or
+`--site`.
 
 ## Multiple wikis
 

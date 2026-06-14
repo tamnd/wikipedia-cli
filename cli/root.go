@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/tamnd/any-cli/kit/render"
 	"github.com/tamnd/wikipedia-cli/wiki"
 )
 
@@ -25,11 +26,12 @@ var cmdOut = os.Stdout
 type App struct {
 	Cfg     wiki.Config
 	Cache   *wiki.Cache
-	Out     *Output
+	Out     *render.Renderer
 	client  *wiki.Client
 	cerr    error
 	Limit   int
 	yes     bool
+	quiet   bool
 	noPager bool
 }
 
@@ -80,8 +82,7 @@ Quick start:
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
-			app.init(g)
-			return nil
+			return app.init(g)
 		},
 	}
 
@@ -90,11 +91,11 @@ Quick start:
 	pf.StringVarP(&g.lang, "lang", "l", envOr("WIKI_LANG", def.Lang), "wiki language subdomain")
 	pf.StringVar(&g.project, "project", envOr("WIKI_PROJECT", def.Project), "Wikimedia project")
 	pf.StringVar(&g.site, "site", os.Getenv("WIKI_SITE"), "explicit wiki host (overrides lang/project)")
-	pf.StringVarP(&g.output, "output", "o", "auto", "table|json|jsonl|csv|tsv|url|raw")
-	pf.StringVar(&g.fields, "fields", "", "comma-separated columns to show")
+	pf.StringVarP(&g.output, "output", "o", "auto", "list|table|markdown|json|jsonl|csv|tsv|url|raw (default list on a terminal, jsonl when piped)")
+	pf.StringVar(&g.fields, "fields", "", "comma-separated columns to keep, in order")
 	pf.IntVarP(&g.limit, "limit", "n", 0, "max results (0 = API default)")
 	pf.StringVar(&g.template, "template", "", "Go text/template applied per row")
-	pf.BoolVar(&g.noHeader, "no-header", false, "omit the header row in table/csv output")
+	pf.BoolVar(&g.noHeader, "no-header", false, "omit the header row (csv/tsv/markdown) or section heading (list)")
 	pf.StringVar(&g.dataDir, "data-dir", def.DataDir, "root data directory")
 	pf.DurationVar(&g.rate, "rate", def.Delay, "minimum delay between requests")
 	pf.IntVar(&g.retries, "retries", def.Retries, "retry attempts on 429/5xx")
@@ -146,7 +147,7 @@ Quick start:
 	return root
 }
 
-func (a *App) init(g *globalFlags) {
+func (a *App) init(g *globalFlags) error {
 	cfg := wiki.DefaultConfig()
 	cfg.Lang = g.lang
 	cfg.Project = g.project
@@ -168,9 +169,15 @@ func (a *App) init(g *globalFlags) {
 	a.Cfg = cfg
 	a.Limit = g.limit
 	a.yes = g.yes
+	a.quiet = g.quiet
 	a.Cache = wiki.NewCache(cfg.CacheDir, !g.noCache)
 	a.client, a.cerr = wiki.New(cfg, a.Cache)
-	a.Out = newOutput(g)
+	out, err := newRenderer(g)
+	if err != nil {
+		return usageErr(err.Error())
+	}
+	a.Out = out
+	return nil
 }
 
 // Client returns the resolved wiki client or the resolution error (bad
