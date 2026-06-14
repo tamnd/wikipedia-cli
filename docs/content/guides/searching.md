@@ -10,8 +10,9 @@ weight: 2
 wiki search "turing machine"
 ```
 
-You get a table of titles with a short description and snippet. In a pipe it is
-JSONL, so it composes:
+You get a readable list of titles, each with a short description and snippet,
+colored on a terminal. Pass `-o table` for a grid. In a pipe it is JSONL, so it
+composes:
 
 ```bash
 wiki search "climate change" -n 50 -o jsonl | wiki get - --summary
