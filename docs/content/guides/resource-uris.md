@@ -1,7 +1,7 @@
 ---
 title: "Resource URIs"
 description: "Use wiki as a database/sql-style driver so a host program can address Wikipedia pages and categories as wikipedia:// URIs."
-weight: 9
+weight: 10
 ---
 
 `wiki` is a command line, but the `wiki` Go package is also a small driver that

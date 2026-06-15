@@ -1,7 +1,7 @@
 ---
 title: "Wikidata"
 description: "Look up structured entities by id or article title, and run raw SPARQL against the Wikidata Query Service."
-weight: 7
+weight: 8
 ---
 
 Wikidata is the structured knowledge graph behind Wikipedia. wiki reads it two

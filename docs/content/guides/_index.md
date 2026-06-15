@@ -15,8 +15,9 @@ depend on each other.
 - [Searching and discovering](/guides/searching/): full text, suggestions,
   random, and related pages.
 - [Page structure](/guides/structure/): links, backlinks, categories, media,
-  references, languages, info, citations, and a breadth-first `discover` walk
-  that chains them.
+  references, languages, info, and citations.
+- [Discovering](/guides/discovering/): a breadth-first `discover` walk that
+  chains those edges across pages and categories.
 - [History and diffs](/guides/history/): revisions and unified diffs.
 - [Feeds and metrics](/guides/feeds-and-metrics/): featured, on this day, top,
   and pageviews.

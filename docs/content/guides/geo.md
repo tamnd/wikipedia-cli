@@ -1,7 +1,7 @@
 ---
 title: "Geo"
 description: "Find articles near a coordinate or near another article."
-weight: 6
+weight: 7
 ---
 
 Many Wikipedia articles carry coordinates. wiki lets you search by them.
