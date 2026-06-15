@@ -1,7 +1,7 @@
 ---
 title: "History and diffs"
 description: "Walk a page's revision history and compare any two revisions as a unified diff."
-weight: 4
+weight: 5
 ---
 
 ## Revision history

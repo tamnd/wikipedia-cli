@@ -121,6 +121,7 @@ Quick start:
 		newBacklinksCmd(app),
 		newCategoriesCmd(app),
 		newCategoryCmd(app),
+		newDiscoverCmd(app),
 		newMediaCmd(app),
 		newReferencesCmd(app),
 		newCiteCmd(app),

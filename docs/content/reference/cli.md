@@ -51,6 +51,7 @@ Shared render flags for `read` and `get`: `--text` (default), `--markdown`/`-m`,
 | `cite <title>` | A citation for the article; `--format bibtex\|ris\|mla\|apa`. |
 | `langs <title>` | The same article in other languages. Alias: `langlinks`. |
 | `info <title>` | Page metadata. |
+| `discover <seed>...` | Breadth-first walk of the graph from a page or category; `--follow content\|network\|cats\|all` or an edge list, `--depth`, `--fanout`. Aliases: `walk`, `graph`. |
 
 ## History
 

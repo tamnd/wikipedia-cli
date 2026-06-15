@@ -4,7 +4,8 @@ description: "Explore the graph around a page: links, backlinks, categories and 
 weight: 3
 ---
 
-Every article is a node in a graph. These commands walk the edges.
+Every article is a node in a graph. These commands walk the edges, one edge at a
+time; [`discover`](/guides/discovering/) walks many at once.
 
 ## Links and backlinks
 
@@ -90,4 +91,16 @@ wiki cite "Alan Turing"                  # BibTeX by default
 wiki cite "Alan Turing" --format ris
 wiki cite "Alan Turing" --format apa
 wiki cite "Alan Turing" --format mla
+```
+
+## Discover: walk the graph
+
+Each command above answers one question about one page. `discover` chains them:
+from a seed it follows the page's edges, then each neighbor's edges, breadth
+first, streaming one row per object it reaches. The [Discovering](/guides/discovering/)
+guide covers the walk in full: the edge presets, the depth and fanout bounds, and
+how the output reads.
+
+```bash
+wiki discover "Alan Turing"              # the obvious neighbors, one hop out
 ```

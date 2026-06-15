@@ -1,7 +1,7 @@
 ---
 title: "Feeds and metrics"
 description: "Browse the daily featured feed and on-this-day events, list the most-viewed articles, and chart pageviews over time."
-weight: 5
+weight: 6
 ---
 
 ## The featured feed

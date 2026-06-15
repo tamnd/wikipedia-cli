@@ -1,7 +1,7 @@
 ---
 title: "Dumps"
 description: "List, download, and stream-parse the public Wikimedia XML dumps with resume, sha1 verification, and constant memory."
-weight: 8
+weight: 9
 ---
 
 When you need the whole encyclopedia rather than one page, the public XML dumps
