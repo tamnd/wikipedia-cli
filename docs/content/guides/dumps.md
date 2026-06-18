@@ -19,9 +19,12 @@ wiki dump list --wiki enwiki --date latest
 wiki dump list --wiki dewiki -o jsonl
 ```
 
-Each row has the job, file name, size, sha1, and URL. The `--wiki` name is a
-dump database name like `enwiki` or `simplewiki`; without it, wiki derives one
-from `--project` and `-l`.
+Each row has the job, file name, size, sha1, and URL. The structured output
+also carries the md5, the job's status (`done`, `waiting`, and so on) and the
+time the job was last updated, so `-o json` is a faithful copy of the relevant
+slice of `dumpstatus.json`. The `--wiki` name is a dump database name like
+`enwiki` or `simplewiki`; without it, wiki derives one from `--project` and
+`-l`.
 
 ## Download a file
 
@@ -51,6 +54,21 @@ wiki dump pages simplewiki-latest-pages-articles.xml.bz2 --text -n 1 -o json
 
 `--namespace` filters to one namespace (0 is articles), `-n` caps the count,
 and `--text` includes the page body.
+
+A `pages-articles` dump carries one current revision per page, but the same
+parser handles a `pages-meta-history` dump, where each page carries its whole
+revision list. The structured output keeps every revision in order, each with
+its id, parent id, timestamp, contributor (a registered user's name and id, or
+an anonymous edit's IP), minor flag, comment, content model and format, origin,
+sha1, and byte length, along with the page's redirect target and edit/move
+restrictions. The table view shows the page id, namespace, title, revision
+count, and the latest revision's id and timestamp; `-o json` keeps all of it,
+so you can reconstruct the full page history from the JSON:
+
+```bash
+wiki dump pages enwiki-latest-pages-meta-history1.xml.bz2 -n 1 --text -o json
+wiki dump pages dump.xml.bz2 -n 1 -o json | jq '.revisions[].contributor'
+```
 
 ## Grep a dump
 
