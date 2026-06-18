@@ -15,6 +15,20 @@ wiki featured 2020-07-20      # a specific date
 wiki featured -o jsonl        # the whole feed as structured data
 ```
 
+The plain output is a digest, one line per item. The structured output is a
+faithful copy of the REST feed: each article keeps its full page summary
+(thumbnail, original image, extract and extract_html, wikibase item, namespace,
+and desktop and mobile URLs), the most-read entries keep their per-day
+`view_history`, the picture of the day keeps its license, credit, artist and
+file page, the in-the-news stories keep the summaries of every article they
+link, and the on-this-day highlights keep the summaries of their linked pages.
+Nothing the feed returns is dropped:
+
+```bash
+wiki featured 2020-07-20 -o json | jq '.tfa.content_urls.mobile.page'
+wiki featured 2020-07-20 -o json | jq '.image.license'
+```
+
 ## On this day
 
 Historical events for a calendar day, across all years:
@@ -27,7 +41,9 @@ wiki onthisday --type deaths -o jsonl
 ```
 
 The `--type` slices are `all`, `selected`, `births`, `deaths`, `holidays`, and
-`events`.
+`events`. The table shows the year, the event text, and the linked page titles;
+`-o json` keeps the full page summary of every linked article, so you can pull
+their extracts or thumbnails straight from the event.
 
 ## Most-viewed articles
 
