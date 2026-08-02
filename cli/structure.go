@@ -202,7 +202,7 @@ Examples:
 			for _, m := range media {
 				if err := app.Out.Emit(Row{
 					Cols:  []string{"title", "url", "mime", "width", "height", "size", "license", "author"},
-					Vals:  []string{m.Title, m.URL, m.Mime, itoa(m.Width), itoa(m.Height), itoa(m.Size), m.License, m.Author},
+					Vals:  []string{m.Title, m.URL(), m.Mime(), itoa(m.Width()), itoa(m.Height()), itoa(m.Size()), m.License(), m.Author()},
 					Value: m,
 				}); err != nil {
 					return err
@@ -218,9 +218,9 @@ Examples:
 
 func downloadMedia(cmd *cobra.Command, app *App, c *wiki.Client, media []wiki.Media, outDir string) error {
 	for _, m := range media {
-		path, err := c.DownloadFile(cmd.Context(), m.URL, outDir, nil)
+		path, err := c.DownloadFile(cmd.Context(), m.URL(), outDir, nil)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "wiki: %s: %v\n", filepath.Base(m.URL), err)
+			fmt.Fprintf(os.Stderr, "wiki: %s: %v\n", filepath.Base(m.URL()), err)
 			continue
 		}
 		_, _ = fmt.Fprintln(cmdOut, path)
