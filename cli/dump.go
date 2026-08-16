@@ -54,8 +54,8 @@ Examples:
 			}
 			for _, f := range files {
 				if err := app.Out.Emit(Row{
-					Cols:  []string{"job", "name", "size", "sha1", "url"},
-					Vals:  []string{f.Job, f.Name, itoa64(f.Size), f.Sha1, f.URL},
+					Cols:  []string{"job", "name", "size", "sha1", "md5", "status", "url"},
+					Vals:  []string{f.Job, f.Name, itoa64(f.Size), f.Sha1, f.Md5, f.Status, f.URL},
 					Value: f,
 				}); err != nil {
 					return err
@@ -199,7 +199,7 @@ Examples:
 			}
 			n := 0
 			err = wiki.StreamPages(args[1], namespace, true, func(p wiki.DumpPage) error {
-				if !re.MatchString(p.Title) && (titleOnly || !re.MatchString(p.Text)) {
+				if !re.MatchString(p.Title) && (titleOnly || !re.MatchString(p.LatestText())) {
 					return nil
 				}
 				if err := app.Out.Emit(dumpPageRow(p, withText)); err != nil {
@@ -227,11 +227,16 @@ Examples:
 }
 
 func dumpPageRow(p wiki.DumpPage, withText bool) Row {
-	cols := []string{"id", "ns", "title", "revid", "timestamp"}
-	vals := []string{itoa(p.ID), itoa(p.NS), p.Title, itoa(p.RevID), p.Timestamp}
+	cols := []string{"id", "ns", "title", "revs", "revid", "timestamp"}
+	var revID, timestamp string
+	if r := p.Latest(); r != nil {
+		revID = itoa(r.ID)
+		timestamp = r.Timestamp
+	}
+	vals := []string{itoa(p.ID), itoa(p.NS), p.Title, itoa(len(p.Revisions)), revID, timestamp}
 	if withText {
 		cols = append(cols, "text")
-		vals = append(vals, p.Text)
+		vals = append(vals, p.LatestText())
 	}
 	return Row{Cols: cols, Vals: vals, Value: p}
 }

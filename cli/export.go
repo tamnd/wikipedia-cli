@@ -63,16 +63,17 @@ Examples:
 				start          = time.Now()
 			)
 			err = wiki.StreamPages(path, namespace, true, func(p wiki.DumpPage) error {
-				if p.Redirect || strings.TrimSpace(p.Text) == "" {
+				text := p.LatestText()
+				if p.Redirect || strings.TrimSpace(text) == "" {
 					return nil
 				}
-				if minBytes > 0 && len(p.Text) < minBytes {
+				if minBytes > 0 && len(text) < minBytes {
 					return nil
 				}
-				if !withRedirects && strings.HasPrefix(strings.ToLower(strings.TrimSpace(p.Text)), "#redirect") {
+				if !withRedirects && strings.HasPrefix(strings.ToLower(strings.TrimSpace(text)), "#redirect") {
 					return nil
 				}
-				body := conv(p.Text)
+				body := conv(text)
 				if strings.TrimSpace(body) == "" {
 					return nil
 				}
