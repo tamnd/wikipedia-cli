@@ -69,7 +69,7 @@ func Check(tex string) []string {
 					continue
 				}
 				k := len(stack) - 1
-				for k >= 0 && !(stack[k].env && stack[k].kind == env) {
+				for k >= 0 && (!stack[k].env || stack[k].kind != env) {
 					k--
 				}
 				if k >= 0 {

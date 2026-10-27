@@ -155,14 +155,14 @@ func (c *conv) convert(s string, italic, bold bool) string {
 				n++
 			}
 			i += n
-			switch {
-			case n == 1:
+			switch n {
+			case 1:
 				o.prime(1)
-			case n == 2:
+			case 2:
 				italic = !italic
-			case n == 3:
+			case 3:
 				setBold(!bold)
-			case n == 4:
+			case 4:
 				o.prime(1)
 				setBold(!bold)
 			default:
@@ -291,11 +291,12 @@ func (c *conv) mod(s string, i int, o *out) int {
 // char writes one character that is not part of a letter run or markup.
 func (c *conv) char(o *out, r rune) {
 	if t, ok := symbols[r]; ok {
-		if t == " " {
+		switch t {
+		case " ":
 			o.space = true
-		} else if t == "'" || t == "''" || t == "'''" {
+		case "'", "''", "'''":
 			o.prime(len(t))
-		} else {
+		default:
 			o.write(t)
 		}
 		return
