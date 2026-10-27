@@ -624,9 +624,9 @@ func (c *conv) template(body string, italic, bold bool) string {
 		return `[` + arg(0) + `)`
 	case "open-closed":
 		return `(` + arg(0) + `]`
-	case "sup":
+	case "sup", "i sup":
 		return `^{` + arg(0) + `}`
-	case "sub":
+	case "sub", "i sub":
 		return `_{` + arg(0) + `}`
 	case "su":
 		var t string

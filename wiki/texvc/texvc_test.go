@@ -85,6 +85,7 @@ func TestConvert(t *testing.T) {
 		{"mset", FormMathTemplate, `''K'' {{=}} {{mset|''e'', ''v''}}`, `K = \{e, v\}`},
 		{"mset with a condition", FormMathTemplate, `{{mset|''x''|''x'' > 0}}`, `\{x\mid x > 0\}`},
 		{"pipe and bracket", FormMathTemplate, `{{pipe}}''G''{{pipe}} {{=}} {{bracket|''G'' : ''H''}}`, `|G| = [G : H]`},
+		{"i sup and i sub", FormMathTemplate, `''Y''{{i sup|''X''}} {{=}} ''a''{{i sub|''n''}}`, `Y^{X} = a_{n}`},
 		{"interval", FormMathTemplate, `{{closed-open|0, 1}}`, `[0, 1)`},
 		{"angle templates", FormMathTemplate, `{{langle}}''u'', ''v''{{rangle}}`, `\langle u, v\rangle`},
 		{"pi", FormMathTemplate, `2{{pi}}''r''`, `2\pi r`},
