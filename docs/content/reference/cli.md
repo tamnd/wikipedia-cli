@@ -46,6 +46,7 @@ Shared render flags for `read` and `get`: `--text` (default), `--markdown`/`-m`,
 | `backlinks <title>` | Pages that link here. Alias: `whatlinkshere`. |
 | `categories <title>` | Categories the page belongs to. Alias: `cats`. |
 | `category <name>` | Members of a category; `--type page\|subcat\|file`. |
+| `assess <project...>` | The pages that a WikiProject tags, with the class and the importance. It follows the list to the end; `--ns` keeps one namespace (default 0). |
 | `media <title>` | Files used on a page; `--download`, `--out-dir`. Aliases: `images`, `files`. |
 | `references <title>` | External sources cited. Alias: `refs`. |
 | `cite <title>` | A citation for the article; `--format bibtex\|ris\|mla\|apa`. |

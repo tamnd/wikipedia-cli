@@ -40,6 +40,18 @@ wiki category Physics --type subcat       # subcategories only
 wiki category Physics --type file         # files only
 ```
 
+## WikiProject assessments
+
+A WikiProject tags the talk pages of the pages in its area, and gives each page a class and an importance. `wiki assess` lists the pages that one or more projects tag. It follows the list to the end, so the output of a large project has all of its pages. A page that two projects tag gives one row for each project.
+
+```bash
+wiki assess Mathematics -o tsv > mathematics.tsv
+wiki assess Statistics "Philosophy/Logic" Cryptography -o jsonl
+wiki assess Mathematics --ns 14 -n 20     # the categories that the project tags
+```
+
+The API gives the subject page of each tagged talk page. `--ns` keeps the pages of one namespace. The default is 0, the articles, and `--ns -1` keeps all of them. On 27 October 2026, `wiki assess Mathematics` gave 29,858 articles in about one minute.
+
 ## Media
 
 The files used on a page, with URL, MIME type, dimensions, size, and license:

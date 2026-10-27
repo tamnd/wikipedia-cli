@@ -54,6 +54,7 @@ Shell completion is built in: `wiki completion bash|zsh|fish|powershell`.
 | `wiki backlinks <title>` | pages that link here |
 | `wiki categories <title>` | categories the page belongs to |
 | `wiki category <name>` | members of a category; `--type page\|subcat\|file` |
+| `wiki assess <project...>` | the pages that a WikiProject tags, with the class and the importance; `--ns` |
 | `wiki media <title>` | files used on a page; `--download` to save them |
 | `wiki references <title>` | external sources cited |
 | `wiki cite <title>` | a formatted citation; `--format bibtex\|ris\|mla\|apa` |
