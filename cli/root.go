@@ -140,6 +140,7 @@ Quick start:
 		newSitesCmd(app),
 		newStatsCmd(app),
 		newConvertCmd(app),
+		newTexvcCmd(app),
 		newDumpCmd(app),
 		newConfigCmd(app),
 		newCacheCmd(app),
