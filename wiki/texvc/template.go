@@ -605,6 +605,25 @@ func (c *conv) template(body string, italic, bold bool) string {
 		return `\langle ` + arg(0) + `\mid ` + arg(1) + `\rangle`
 	case "pi":
 		return `\pi`
+	case "mset":
+		if len(pos) > 1 {
+			return `\{` + arg(0) + `\mid ` + arg(1) + `\}`
+		}
+		return `\{` + arg(0) + `\}`
+	case "brace":
+		return `\{` + arg(0) + `\}`
+	case "bracket":
+		return `[` + arg(0) + `]`
+	case "pipe":
+		return `|`
+	case "closed-closed":
+		return `[` + arg(0) + `]`
+	case "open-open":
+		return `(` + arg(0) + `)`
+	case "closed-open":
+		return `[` + arg(0) + `)`
+	case "open-closed":
+		return `(` + arg(0) + `]`
 	case "sup":
 		return `^{` + arg(0) + `}`
 	case "sub":
