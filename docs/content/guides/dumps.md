@@ -36,7 +36,20 @@ wiki dump download metahistory7zdump --out-dir ~/dumps
 Progress prints to stderr and the final path prints to stdout, so it composes
 in a script.
 
-## Stream pages
+## Download the SQL tables
+
+`wiki dump tables` downloads the SQL table dumps of one date. With no table name, it downloads the tables that a base build reads: `page`, `redirect`, `page_props`, `categorylinks`, `linktarget`, `pagelinks`, `templatelinks`, `langlinks` and `wbc_entity_usage`. For English Wikipedia these are about 19 GB.
+
+```bash
+wiki dump tables --dry-run
+wiki dump tables --date 20261001 --out-dir work/dumps/20261001
+wiki dump tables page redirect page_props
+```
+
+With `--date latest`, the command takes the newest dump in which the job of each table is done. The newest dump can still run, so this date can be older than the newest date of `wiki dump list`. The command checks each file against the sha1 of the dump status. It does not download again a file that has the correct sha1, and it resumes a partial file. If the sha1 of a resumed file is not correct, it downloads the file again from the start. Each row of the output gives the table, the file, the size, the state (`planned`, `have` or `downloaded`) and the path.
+
+`wiki dump sql` reads the rows of one of these files as a stream, with no database server.
+
 
 Parse a local `pages-articles` dump into records in constant memory. bzip2 and
 gzip are handled for you, so you can stream a compressed file directly. For

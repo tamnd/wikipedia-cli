@@ -74,6 +74,8 @@ Shell completion is built in: `wiki completion bash|zsh|fish|powershell`.
 | `wiki dump pages <file>` | stream-parse a pages-articles dump |
 | `wiki dump grep <pattern> <file>` | pages matching a regexp |
 | `wiki dump export [file]` | convert a dump to a Markdown or text corpus |
+| `wiki dump sql <file>` | stream the rows of a SQL table dump; `--columns`, `--schema` |
+| `wiki dump tables [table...]` | download the SQL table dumps of one date with a sha1 check; `--date`, `--out-dir`, `--dry-run` |
 | `wiki sites` | known Wikimedia projects and example hosts |
 | `wiki stats` | statistics for the selected wiki |
 | `wiki convert <file \| ->` | convert HTML or wikitext offline |

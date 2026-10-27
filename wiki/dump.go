@@ -25,6 +25,8 @@ type DumpFile struct {
 	Size int64  `json:"size"`
 	Sha1 string `json:"sha1,omitempty"`
 	URL  string `json:"url"`
+	// Status is the status of the job: "done" when the file is complete.
+	Status string `json:"status,omitempty"`
 }
 
 // DumpList returns the files of a dump for a wiki and date. date may be a
@@ -40,7 +42,7 @@ func (c *Client) DumpList(ctx context.Context, wiki, date string) ([]DumpFile, s
 		}
 		date = d
 	}
-	statusURL := fmt.Sprintf("%s/%s/%s/dumpstatus.json", DumpsBase, wiki, date)
+	statusURL := fmt.Sprintf("%s/%s/%s/dumpstatus.json", c.Cfg.dumpsBase(), wiki, date)
 	var status struct {
 		Jobs map[string]struct {
 			Status string `json:"status"`
@@ -59,7 +61,7 @@ func (c *Client) DumpList(ctx context.Context, wiki, date string) ([]DumpFile, s
 		for name, f := range j.Files {
 			out = append(out, DumpFile{
 				Job: job, Name: name, Size: f.Size, Sha1: f.Sha1,
-				URL: DumpsBase + f.URL,
+				URL: c.Cfg.dumpsBase() + f.URL, Status: j.Status,
 			})
 		}
 	}
@@ -70,19 +72,103 @@ func (c *Client) DumpList(ctx context.Context, wiki, date string) ([]DumpFile, s
 var dumpDateRe = regexp.MustCompile(`href="(\d{8})/"`)
 
 func (c *Client) latestDumpDate(ctx context.Context, wiki string) (string, error) {
-	body, err := c.HTTP.GetBytes(ctx, fmt.Sprintf("%s/%s/", DumpsBase, wiki))
+	dates, err := c.dumpDates(ctx, wiki)
 	if err != nil {
 		return "", err
+	}
+	return dates[len(dates)-1], nil
+}
+
+// dumpDates returns the dates of the dumps of a wiki, oldest first.
+func (c *Client) dumpDates(ctx context.Context, wiki string) ([]string, error) {
+	body, err := c.HTTP.GetBytes(ctx, fmt.Sprintf("%s/%s/", c.Cfg.dumpsBase(), wiki))
+	if err != nil {
+		return nil, err
 	}
 	var dates []string
 	for _, m := range dumpDateRe.FindAllStringSubmatch(string(body), -1) {
 		dates = append(dates, m[1])
 	}
 	if len(dates) == 0 {
-		return "", fmt.Errorf("no dated dumps found for %s", wiki)
+		return nil, fmt.Errorf("no dated dumps found for %s", wiki)
 	}
 	sort.Strings(dates)
-	return dates[len(dates)-1], nil
+	return dates, nil
+}
+
+// DumpTables are the SQL tables that the base build of a corpus reads: the
+// page register, the redirects, the page properties, and the category, link,
+// template, language and Wikidata usage tables.
+var DumpTables = []string{
+	"page", "redirect", "page_props", "categorylinks", "linktarget",
+	"pagelinks", "templatelinks", "langlinks", "wbc_entity_usage",
+}
+
+// TableJob gives the dump job of a SQL table. The job name is the table name
+// with no underscores and the suffix "table", so "page_props" gives
+// "pagepropstable".
+func TableJob(table string) string {
+	return strings.ReplaceAll(table, "_", "") + "table"
+}
+
+// tablesBack is the number of dump dates that DumpTableFiles tries for
+// "latest" before it stops.
+const tablesBack = 3
+
+// DumpTableFiles returns the file of each table, in the order of tables, for
+// a wiki and a date. With the date "latest" or "", it takes the newest dump
+// in which the job of each table is done, because the newest dump can still
+// run. With a concrete date, a job that is not done is an error.
+func (c *Client) DumpTableFiles(ctx context.Context, wiki, date string, tables []string) ([]DumpFile, string, error) {
+	if wiki == "" {
+		wiki = c.Site.DumpWiki()
+	}
+	dates := []string{date}
+	if date == "" || date == "latest" {
+		all, err := c.dumpDates(ctx, wiki)
+		if err != nil {
+			return nil, "", err
+		}
+		dates = nil
+		for i := len(all) - 1; i >= 0 && len(dates) < tablesBack; i-- {
+			dates = append(dates, all[i])
+		}
+	}
+	var last error
+	for _, d := range dates {
+		files, _, err := c.DumpList(ctx, wiki, d)
+		if err != nil {
+			return nil, d, err
+		}
+		out, err := tableFiles(files, tables)
+		if err == nil {
+			return out, d, nil
+		}
+		last = fmt.Errorf("%s %s: %w", wiki, d, err)
+	}
+	return nil, "", last
+}
+
+// tableFiles picks the .sql.gz file of the job of each table.
+func tableFiles(files []DumpFile, tables []string) ([]DumpFile, error) {
+	var out []DumpFile
+	for _, t := range tables {
+		var f *DumpFile
+		for i := range files {
+			if files[i].Job == TableJob(t) && strings.HasSuffix(files[i].Name, "-"+t+".sql.gz") {
+				f = &files[i]
+				break
+			}
+		}
+		switch {
+		case f == nil:
+			return nil, fmt.Errorf("the dump has no file for the table %s", t)
+		case f.Status != "done":
+			return nil, fmt.Errorf("the job %s is not done (status %q)", f.Job, f.Status)
+		}
+		out = append(out, *f)
+	}
+	return out, nil
 }
 
 // DownloadFile streams url to outDir, resuming a partial file by byte range and

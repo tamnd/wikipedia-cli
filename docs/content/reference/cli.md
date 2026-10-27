@@ -94,6 +94,8 @@ Shared render flags for `read` and `get`: `--text` (default), `--markdown`/`-m`,
 | `dump pages <file>` | Stream-parse a pages-articles dump; `--namespace`, `--text`. |
 | `dump grep <pattern> <file>` | Emit pages matching a regexp; `--title-only`, `--text`. |
 | `dump export [file]` | Convert a dump to Markdown/text; `--out-dir`, `--format`, `--download`, `--min-bytes`. |
+| `dump sql <file>` | Stream the rows of a SQL table dump; `--columns`, `--schema`. |
+| `dump tables [table...]` | Download the SQL table dumps of one date and check each sha1; `--date`, `--out-dir`, `--dry-run`. |
 
 ## Utility
 

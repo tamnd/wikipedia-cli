@@ -3,6 +3,7 @@ package wiki
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -52,6 +53,16 @@ type Config struct {
 	// AllowAnyHost disables the Wikimedia-host allowlist (SSRF guard). Off by
 	// default so a hostile "title"/URL cannot point the client elsewhere.
 	AllowAnyHost bool
+	// DumpsURL is the root of the dumps host. Empty means DumpsBase.
+	DumpsURL string
+}
+
+// dumpsBase gives the root of the dumps host.
+func (c Config) dumpsBase() string {
+	if c.DumpsURL != "" {
+		return strings.TrimSuffix(c.DumpsURL, "/")
+	}
+	return DumpsBase
 }
 
 // DefaultConfig returns a Config rooted at ~/data/wiki, reading English
