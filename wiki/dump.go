@@ -392,3 +392,70 @@ func streamPagesReader(r io.Reader, namespace int, withText bool, fn func(DumpPa
 		}
 	}
 }
+
+// streamRetries is the number of times that a stream opens its URL again
+// with no progress before it stops.
+const streamRetries = 5
+
+// StreamFile returns a reader of the file at url. When the connection drops,
+// the reader opens the URL again with a Range header from the offset that
+// it reached. So a long read of a large dump file continues, and the bytes
+// that the caller gets are the bytes of the file.
+func (c *Client) StreamFile(ctx context.Context, url string) io.ReadCloser {
+	return &resumeReader{ctx: ctx, h: c.HTTP, url: url}
+}
+
+type resumeReader struct {
+	ctx   context.Context
+	h     *HTTPClient
+	url   string
+	off   int64
+	body  io.ReadCloser
+	tries int
+}
+
+func (r *resumeReader) Read(p []byte) (int, error) {
+	for {
+		if r.body == nil {
+			rangeHdr := ""
+			if r.off > 0 {
+				rangeHdr = fmt.Sprintf("bytes=%d-", r.off)
+			}
+			resp, err := r.h.Open(r.ctx, r.url, rangeHdr)
+			if err != nil {
+				return 0, err
+			}
+			if r.off > 0 && resp.StatusCode != 206 {
+				_ = resp.Body.Close()
+				return 0, fmt.Errorf("%s: the server does not continue the stream at byte %d", r.url, r.off)
+			}
+			r.body = resp.Body
+		}
+		n, err := r.body.Read(p)
+		r.off += int64(n)
+		if n > 0 {
+			r.tries = 0
+		}
+		if err == nil || err == io.EOF {
+			return n, err
+		}
+		_ = r.body.Close()
+		r.body = nil
+		if r.ctx.Err() != nil {
+			return n, r.ctx.Err()
+		}
+		if r.tries++; r.tries > streamRetries {
+			return n, err
+		}
+		if n > 0 {
+			return n, nil
+		}
+	}
+}
+
+func (r *resumeReader) Close() error {
+	if r.body == nil {
+		return nil
+	}
+	return r.body.Close()
+}

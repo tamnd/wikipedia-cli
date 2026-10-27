@@ -3,6 +3,7 @@ package wiki
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -85,5 +86,46 @@ func TestDumpTableFilesNoDoneDump(t *testing.T) {
 	_, _, err := c.DumpTableFiles(context.Background(), "enwiki", "latest", []string{"page"})
 	if err == nil || !strings.Contains(err.Error(), "enwiki 20260901: the job pagetable is not done") {
 		t.Errorf("err is %v", err)
+	}
+}
+
+func TestStreamFileResumes(t *testing.T) {
+	data := strings.Repeat("0123456789", 100)
+	var opens int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		opens++
+		from := 0
+		if rg := r.Header.Get("Range"); rg != "" {
+			if _, err := fmt.Sscanf(rg, "bytes=%d-", &from); err != nil {
+				http.Error(w, "bad range", http.StatusBadRequest)
+				return
+			}
+			w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", from, len(data)-1, len(data)))
+		}
+		// Send at most 300 bytes, then drop the connection.
+		end := min(from+300, len(data))
+		w.Header().Set("Content-Length", fmt.Sprint(len(data)-from))
+		if from > 0 {
+			w.WriteHeader(http.StatusPartialContent)
+		}
+		_, _ = w.Write([]byte(data[from:end]))
+		w.(http.Flusher).Flush()
+		if end < len(data) {
+			panic(http.ErrAbortHandler)
+		}
+	}))
+	defer srv.Close()
+	c := dumpHost(t, map[string]string{})
+	rc := c.StreamFile(context.Background(), srv.URL+"/f.sql.gz")
+	defer func() { _ = rc.Close() }()
+	got, err := io.ReadAll(rc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != data {
+		t.Fatalf("got %d bytes, want %d", len(got), len(data))
+	}
+	if opens != 4 {
+		t.Errorf("the reader opened the URL %d times, want 4", opens)
 	}
 }

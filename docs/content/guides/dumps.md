@@ -50,6 +50,20 @@ With `--date latest`, the command takes the newest dump in which the job of each
 
 `wiki dump sql` reads the rows of one of these files as a stream, with no database server.
 
+## Load a table into a store
+
+`wiki dump load` writes the rows of a SQL table dump to a table of a SQLite store. The source is a local file, or the name of a table. For a table name, the command streams the file from the dump host and does not write it to disk, so a large table needs space only for the rows that you keep. When the connection drops, the stream continues from the byte that it reached.
+
+```bash
+wiki dump load --db store.sqlite enwiki-20261001-redirect.sql.gz
+wiki dump load --db store.sqlite --date 20261001 page --columns page_id,page_namespace,page_title,page_is_redirect --where page_namespace=0,10,14 --index page_title
+wiki dump load --db store.sqlite --date 20261001 pagelinks --in pl_from=pages.txt
+```
+
+`--columns` keeps some of the columns. `--where col=v1,v2` keeps the rows in which the column has one of the values. `--in col=FILE` keeps the rows in which the column has a value of the file, with one value on each line. All the filters must match. `--as` gives the table a different name, so that one dump table can give two store tables. `--index` adds an index on a kept column after the load.
+
+A load replaces its table. The table `_load` of the store records the source, the columns, the filters and the counts of each load. An integer column of the dump is an `INTEGER` column of the store, a `float` or `double` column is `REAL`, and the other columns are `TEXT`.
+
 
 Parse a local `pages-articles` dump into records in constant memory. bzip2 and
 gzip are handled for you, so you can stream a compressed file directly. For

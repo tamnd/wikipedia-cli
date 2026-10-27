@@ -96,6 +96,7 @@ Shared render flags for `read` and `get`: `--text` (default), `--markdown`/`-m`,
 | `dump export [file]` | Convert a dump to Markdown/text; `--out-dir`, `--format`, `--download`, `--min-bytes`. |
 | `dump sql <file>` | Stream the rows of a SQL table dump; `--columns`, `--schema`. |
 | `dump tables [table...]` | Download the SQL table dumps of one date and check each sha1; `--date`, `--out-dir`, `--dry-run`. |
+| `dump load <file\|table>` | Load a SQL table dump into a SQLite store, from a file or as a stream from the dump host; `--db`, `--date`, `--as`, `--columns`, `--where`, `--in`, `--index`. |
 
 ## Utility
 
