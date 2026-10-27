@@ -1,0 +1,8 @@
+Shown<noinclude> also shown</noinclude><includeonly> hidden {{x}}</includeonly>.
+<syntaxhighlight lang="python">
+def f(): return "{{not}}"
+</syntaxhighlight>
+ preformatted line
+ second pre line
+<div class="x">div ''text''</div><span>no close
+<sup>2</sup> and <SUB>i</SUB> and <br/> and <br>

@@ -1,0 +1,33 @@
+document 0-226
+  section 0-182 level=0
+    paragraph 0-181
+      text 0-7 "A fact."
+      tag 7-91 ref
+        template 12-85 "cite book"
+          param last 25-39
+            text 30-39 "Herstein "
+          param title 40-64
+            text 46-64 "Topics in Algebra "
+          param year 65-75
+            text 70-75 "1975 "
+          param page 76-83
+            text 81-83 "41"
+      text 91-97 " More."
+      tag 97-114 ref self name="r1"
+      text 114-121 " Again."
+      tag 121-155 ref name="r2"
+        text 134-149 "Plain text ref."
+      template 155-181 "sfn"
+        param 1 161-168
+          text 161-168 "Gallian"
+        param 2 169-173
+          text 169-173 "2010"
+        param p 174-179
+          text 176-179 "150"
+  section 182-226 level=2
+    heading 182-198 level=2
+      text 184-196 " References "
+    paragraph 199-225
+      template 199-210 "reflist"
+      text 210-211 "\n"
+      tag 211-225 references self

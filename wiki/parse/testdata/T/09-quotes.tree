@@ -1,0 +1,33 @@
+document 0-131
+  section 0-131 level=0
+    paragraph 0-130
+      bold 0-10
+        text 3-7 "bold"
+      text 10-15 " and "
+      italic 15-25
+        text 17-23 "italic"
+      text 25-30 " and "
+      bold 30-44
+        italic 33-41
+          text 35-39 "both"
+      text 44-49 " and "
+      bold 49-74
+        text 52-57 "bold "
+        italic 57-66
+          text 59-64 "inner"
+        text 66-71 " bold"
+      text 74-79 " end."
+      text 79-80 "\n"
+      italic 80-98
+        text 82-98 "open italic only"
+      text 98-99 "\n"
+      text 99-108 "next line"
+      bold 108-118
+        text 111-115 "bold"
+      text 118-119 "\n"
+      text 119-120 "l"
+      text 120-121 "'"
+      bold 121-129
+        text 124-125 "x"
+        text 125-126 "'"
+      text 129-130 "s"

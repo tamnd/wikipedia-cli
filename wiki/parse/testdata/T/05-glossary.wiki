@@ -1,0 +1,6 @@
+{{glossary}}
+{{term|abelian group}}
+{{defn|A [[group (mathematics)|group]] in which the operation is [[commutative]].}}
+{{term|coset|content=coset}}
+{{defn|no=1|A set of the form {{math|''gH''}}.}}
+{{glossary end}}

@@ -1,0 +1,14 @@
+document 0-153
+  section 0-153 level=0
+    paragraph 0-152
+      text 0-64 "An {{unclosed template and [[unclosed link and <ref>unclosed ref"
+      text 64-65 "\n"
+      template 65-75 "ok"
+        param a 70-73
+          text 72-73 "b"
+      text 75-114 " still parsed. A stray }} and ]] and |."
+      text 114-115 "\n"
+      argument 115-128 "{nested"
+      text 128-134 "} and "
+      argument 134-151 "arg"
+      text 151-152 "."

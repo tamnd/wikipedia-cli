@@ -1,0 +1,59 @@
+document 0-390
+  section 0-390 level=0
+    paragraph 0-52
+      bold 0-14
+        text 3-11 "Theorem."
+      text 14-52 " Every group of prime order is cyclic."
+    paragraph 54-108
+      bold 54-66
+        text 57-63 "Proof."
+      text 66-108 " Take an element that is not the identity."
+    list 110-221
+      item 110-118 ";"
+        text 111-118 "Lemma 2"
+      item 119-221 ":"
+        text 120-123 "If "
+        template 123-137 "math"
+          param 1 130-135
+            italic 130-135
+              text 132-133 "p"
+        text 137-146 " divides "
+        template 146-168 "math"
+          param 1 153-166
+            template 153-166 "abs"
+              param 1 159-164
+                italic 159-164
+                  text 161-162 "G"
+        text 168-175 ", then "
+        template 175-185 "mvar"
+          param 1 182-183
+            text 182-183 "G"
+        text 185-210 " has an element of order "
+        template 210-220 "mvar"
+          param 1 217-218
+            text 217-218 "p"
+        text 220-221 "."
+    paragraph 222-389
+      template 222-250 "collapse top"
+        param title 237-248
+          text 243-248 "Proof"
+      text 250-251 "\n"
+      text 251-264 "By induction."
+      text 264-265 "\n"
+      template 265-284 "collapse bottom"
+      text 284-285 "\n"
+      template 285-349 "NumBlk"
+        param 1 294-295
+          text 294-295 ":"
+        param 2 296-329
+          tag 296-329 math inner="a^p \\equiv a \\pmod p"
+        param 3 330-347
+          template 330-347 "EquationRef"
+            param 1 344-345
+              text 344-345 "1"
+      text 349-350 "\n"
+      text 350-353 "By "
+      template 353-371 "EquationNote"
+        param 1 368-369
+          text 368-369 "1"
+      text 371-389 ", the claim holds."

@@ -1,0 +1,3 @@
+An {{unclosed template and [[unclosed link and <ref>unclosed ref
+{{ok|a=b}} still parsed. A stray }} and ]] and |.
+{{{{nested}}}} and {{{arg|default}}}.

@@ -1,0 +1,38 @@
+document 0-200
+  section 0-200 level=0
+    table 0-199 class="wikitable"
+      caption 21-36
+        text 23-36 " Small groups"
+      row 37-57
+        cell 40-48 header
+          text 41-48 " Order "
+        cell 48-57 header
+          text 50-57 " Groups"
+      row 58-85
+        cell 61-65
+          text 62-65 " 1 "
+        cell 65-85
+          text 67-68 " "
+          link 68-85 "Trivial group"
+      row 86-144
+        cell 89-113 style="color:red"
+          text 110-113 " 2 "
+        cell 113-144
+          text 115-116 " "
+          template 116-144 "math"
+            param 1 123-142
+              bold 123-130
+                text 126-127 "Z"
+              tag 130-142 sub
+                text 135-136 "2"
+      row 145-196
+        cell 148-152
+          text 149-152 " 4 "
+        cell 152-196
+          list 155-196
+            item 155-173 "*"
+              text 156-157 " "
+              link 157-173 "Cyclic group"
+            item 174-196 "*"
+              text 175-176 " "
+              link 176-196 "Klein four-group"

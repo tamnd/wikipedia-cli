@@ -1,0 +1,37 @@
+document 0-182
+  section 0-11 level=0
+    paragraph 0-10
+      text 0-10 "Lead text."
+  section 11-118 level=2
+    heading 11-25 level=2
+      text 13-23 "Definition"
+    paragraph 26-49
+      text 26-28 "A "
+      bold 28-39
+        text 31-36 "group"
+      text 39-49 " is a set."
+    section 50-118 level=3
+      heading 50-88 level=3
+        text 53-72 " Formal definition "
+      paragraph 89-94
+        text 89-94 "Text."
+      section 95-118 level=4
+        heading 95-109 level=4
+          text 99-105 " Deep "
+        paragraph 110-117
+          text 110-117 "Deeper."
+  section 118-168 level=2
+    heading 118-132 level=2
+      text 120-130 " Examples "
+    section 133-168 level=3
+      heading 133-149 level=3
+        text 136-146 " Integers "
+      paragraph 150-167
+        text 150-154 "The "
+        link 154-166 "integer" trail="s"
+        text 166-167 "."
+  section 168-182 level=1
+    heading 168-175 level=1
+      text 169-174 " Top "
+    paragraph 176-181
+      text 176-181 "Last."

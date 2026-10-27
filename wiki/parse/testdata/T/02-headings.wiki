@@ -1,0 +1,12 @@
+Lead text.
+==Definition==
+A '''group''' is a set.
+=== Formal definition ===<!-- note -->
+Text.
+==== Deep ====
+Deeper.
+== Examples ==
+=== Integers ===
+The [[integer]]s.
+= Top =
+Last.

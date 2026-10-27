@@ -1,0 +1,13 @@
+{| class="wikitable"
+|+ Small groups
+|-
+! Order !! Groups
+|-
+| 1 || [[Trivial group]]
+|-
+| style="color:red" | 2 || {{math|'''Z'''<sub>2</sub>}}
+|-
+| 4 ||
+* [[Cyclic group]]
+* [[Klein four-group]]
+|}

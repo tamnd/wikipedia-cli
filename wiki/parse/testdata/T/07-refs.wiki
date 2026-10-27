@@ -1,0 +1,4 @@
+A fact.<ref>{{cite book |last=Herstein |title=Topics in Algebra |year=1975 |page=41}}</ref> More.<ref name="r1" /> Again.<ref name=r2>Plain text ref.</ref>{{sfn|Gallian|2010|p=150}}
+== References ==
+{{reflist}}
+<references />

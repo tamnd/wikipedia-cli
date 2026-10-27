@@ -1,0 +1,76 @@
+document 0-489
+  section 0-209 level=0
+    paragraph 0-207
+      template 0-45 "short description"
+        param 1 20-43
+          text 20-43 "Theorem in group theory"
+      text 45-46 "\n"
+      text 46-49 "In "
+      link 49-64 "mathematics"
+      text 64-66 ", "
+      bold 66-90
+        text 69-87 "Lagrange's theorem"
+      text 90-118 " states that the order of a "
+      link 118-130 "subgroup"
+      text 130-131 " "
+      template 131-141 "mvar"
+        param 1 138-139
+          text 138-139 "H"
+      text 141-147 " of a "
+      link 147-163 "finite group"
+      text 163-164 " "
+      template 164-174 "mvar"
+        param 1 171-172
+          text 171-172 "G"
+      text 174-196 " divides the order of "
+      template 196-206 "mvar"
+        param 1 203-204
+          text 203-204 "G"
+      text 206-207 "."
+  section 209-489 level=2
+    heading 209-224 level=2
+      text 211-222 " Statement "
+    paragraph 225-398
+      template 225-398 "math theorem"
+        param name 240-263
+          text 245-263 "Lagrange's theorem"
+        param math_statement 264-396
+          text 279-282 "If "
+          template 282-292 "mvar"
+            param 1 289-290
+              text 289-290 "H"
+          text 292-325 " is a subgroup of a finite group "
+          template 325-335 "mvar"
+            param 1 332-333
+              text 332-333 "G"
+          text 335-342 ", then "
+          template 342-364 "math"
+            param 1 349-362
+              template 349-362 "abs"
+                param 1 355-360
+                  italic 355-360
+                    text 357-358 "H"
+          text 364-373 " divides "
+          template 373-395 "math"
+            param 1 380-393
+              template 380-393 "abs"
+                param 1 386-391
+                  italic 386-391
+                    text 388-389 "G"
+          text 395-396 "."
+    paragraph 400-488
+      template 400-488 "math proof"
+        param title 413-424
+          text 419-424 "Proof"
+        param proof 425-486
+          text 431-440 "The left "
+          link 440-450 "coset" trail="s"
+          text 450-454 " of "
+          template 454-464 "mvar"
+            param 1 461-462
+              text 461-462 "H"
+          text 464-475 " partition "
+          template 475-485 "mvar"
+            param 1 482-483
+              text 482-483 "G"
+          text 485-486 "."

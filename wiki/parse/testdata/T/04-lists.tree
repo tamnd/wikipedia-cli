@@ -1,0 +1,23 @@
+document 0-133
+  section 0-133 level=0
+    list 0-132
+      item 0-5 "*"
+        text 1-5 " one"
+      item 6-22 "**"
+        text 8-22 " one point one"
+      item 23-31 "*#"
+        text 25-31 " mixed"
+      item 32-39 "#"
+        text 33-39 " first"
+      item 40-63 "#:"
+        text 42-63 " indented under first"
+      item 64-71 ";"
+        text 65-71 " term "
+      item 71-87 ":"
+        text 72-87 " its definition"
+      item 88-98 ";"
+        text 89-98 " term two"
+      item 99-115 ":"
+        text 100-115 " definition two"
+      item 116-132 "::"
+        text 118-132 " deeper indent"

@@ -1,0 +1,9 @@
+* one
+** one point one
+*# mixed
+# first
+#: indented under first
+; term : its definition
+; term two
+: definition two
+:: deeper indent

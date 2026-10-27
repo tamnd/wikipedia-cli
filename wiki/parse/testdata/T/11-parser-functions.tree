@@ -1,0 +1,48 @@
+document 0-375
+  section 0-375 level=0
+    paragraph 0-374
+      template 0-34 "DEFAULTSORT"
+        param 1 14-32
+          text 14-32 "Lagrange's theorem"
+      template 34-57 "#if"
+        param 1 40-48
+          argument 40-48 "x"
+        param 2 49-52
+          text 49-52 "yes"
+        param 3 53-55
+          text 53-55 "no"
+      template 57-87 "#invoke"
+        param 1 67-71
+          text 67-71 "Math"
+        param 2 72-81
+          text 72-81 "precision"
+        param 3 82-85
+          text 82-85 "1.5"
+      text 87-88 "\n"
+      template 88-374 "Infobox mathematical statement"
+        param name 122-149
+          text 129-148 " Lagrange's theorem"
+          text 148-149 "\n"
+        param type 150-170
+          text 157-158 " "
+          link 158-169 "Theorem"
+          text 169-170 "\n"
+        param field 171-197
+          text 179-180 " "
+          link 180-196 "Group theory"
+          text 196-197 "\n"
+        param conjectured by 198-242
+          text 215-216 " "
+          link 216-241 "Joseph-Louis Lagrange"
+          text 241-242 "\n"
+        param first proof by 243-297
+          text 260-261 " "
+          link 261-279 "Camille Jordan"
+          comment 279-296
+          text 296-297 "\n"
+        param generalizations 298-372
+          text 316-317 "\n"
+          text 317-319 "* "
+          link 319-371 "Cauchy's theorem (group theory)"
+            text 353-369 "Cauchy's theorem"
+          text 371-372 "\n"

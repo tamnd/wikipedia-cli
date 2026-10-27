@@ -1,0 +1,7 @@
+{{short description|Theorem in group theory}}
+In [[mathematics]], '''Lagrange's theorem''' states that the order of a [[subgroup]] {{mvar|H}} of a [[finite group]] {{mvar|G}} divides the order of {{mvar|G}}.
+
+== Statement ==
+{{math theorem|name=Lagrange's theorem|math_statement=If {{mvar|H}} is a subgroup of a finite group {{mvar|G}}, then {{math|{{abs|''H''}}}} divides {{math|{{abs|''G''}}}}.}}
+
+{{math proof|title=Proof|proof=The left [[coset]]s of {{mvar|H}} partition {{mvar|G}}.}}

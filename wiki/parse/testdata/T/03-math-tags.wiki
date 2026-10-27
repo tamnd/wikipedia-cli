@@ -1,0 +1,4 @@
+The order is <math>|G| = [G:H]\,|H|</math> and
+<math display="block">\sum_{i=1}^n a_i < b</math>
+Also <math>a</math>, <chem>H2O</chem>, {{tmath|x^2}} and {{math|''a''<sup>2</sup> + ''b''<sup>2</sup>}}.
+<nowiki>{{not a template}}</nowiki> <!-- a {{comment}} -->

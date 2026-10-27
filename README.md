@@ -78,6 +78,7 @@ Shell completion is built in: `wiki completion bash|zsh|fish|powershell`.
 | `wiki stats` | statistics for the selected wiki |
 | `wiki convert <file \| ->` | convert HTML or wikitext offline |
 | `wiki texvc <tex \| file \| ->` | convert Wikipedia mathematics (`<math>`, `{{math}}`, `{{mvar}}`, `{{tmath}}`) to standard TeX; `--form` |
+| `wiki parse <title \| file \| ->` | parse wikitext into a tree with byte spans |
 
 Full reference and guides live at [wikipedia-cli.tamnd.com](https://wikipedia-cli.tamnd.com).
 

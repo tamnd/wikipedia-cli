@@ -1,0 +1,36 @@
+document 0-215
+  section 0-215 level=0
+    paragraph 0-214
+      template 0-12 "glossary"
+      text 12-13 "\n"
+      template 13-35 "term"
+        param 1 20-33
+          text 20-33 "abelian group"
+      text 35-36 "\n"
+      template 36-119 "defn"
+        param 1 43-117
+          text 43-45 "A "
+          link 45-74 "group (mathematics)"
+            text 67-72 "group"
+          text 74-101 " in which the operation is "
+          link 101-116 "commutative"
+          text 116-117 "."
+      text 119-120 "\n"
+      template 120-148 "term"
+        param 1 127-132
+          text 127-132 "coset"
+        param content 133-146
+          text 141-146 "coset"
+      text 148-149 "\n"
+      template 149-197 "defn"
+        param no 156-160
+          text 159-160 "1"
+        param 1 161-195
+          text 161-179 "A set of the form "
+          template 179-194 "math"
+            param 1 186-192
+              italic 186-192
+                text 188-190 "gH"
+          text 194-195 "."
+      text 197-198 "\n"
+      template 198-214 "glossary end"

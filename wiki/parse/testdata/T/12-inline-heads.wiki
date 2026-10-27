@@ -1,0 +1,11 @@
+'''Theorem.''' Every group of prime order is cyclic.
+
+'''Proof.''' Take an element that is not the identity.
+
+;Lemma 2
+:If {{math|''p''}} divides {{math|{{abs|''G''}}}}, then {{mvar|G}} has an element of order {{mvar|p}}.
+{{collapse top|title=Proof}}
+By induction.
+{{collapse bottom}}
+{{NumBlk|:|<math>a^p \equiv a \pmod p</math>|{{EquationRef|1}}}}
+By {{EquationNote|1}}, the claim holds.

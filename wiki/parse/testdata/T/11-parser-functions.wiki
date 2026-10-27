@@ -1,0 +1,10 @@
+{{DEFAULTSORT:Lagrange's theorem}}{{#if:{{{x|}}}|yes|no}}{{#invoke:Math|precision|1.5}}
+{{Infobox mathematical statement
+| name = Lagrange's theorem
+| type = [[Theorem]]
+| field = [[Group theory]]
+| conjectured by = [[Joseph-Louis Lagrange]]
+| first proof by = [[Camille Jordan]]<!-- disputed -->
+| generalizations =
+* [[Cauchy's theorem (group theory)|Cauchy's theorem]]
+}}

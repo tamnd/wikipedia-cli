@@ -1,0 +1,8 @@
+Shapes with eight faces:
+
+<gallery widths=180 heights=180>
+File:Hexagonal Prism.svg | [[Hexagonal prism]]: two faces are hexagons.<ref>{{cite book |title=Polyhedra}}</ref>
+File:Cube.svg | A [[cube]] with <math>n</math> faces
+</gallery>
+
+A value with no close quote: <math display="block>x^2</math> and <math>y</math>.

@@ -1,0 +1,27 @@
+document 0-318
+  section 0-318 level=0
+    paragraph 0-24
+      text 0-24 "Shapes with eight faces:"
+    paragraph 26-235
+      tag 26-235 gallery heights="180" widths="180"
+        text 58-59 "\n"
+        text 59-86 "File:Hexagonal Prism.svg | "
+        link 86-105 "Hexagonal prism"
+        text 105-130 ": two faces are hexagons."
+        tag 130-171 ref
+          template 135-165 "cite book"
+            param title 148-163
+              text 154-163 "Polyhedra"
+        text 171-172 "\n"
+        text 172-190 "File:Cube.svg | A "
+        link 190-198 "cube"
+        text 198-204 " with "
+        tag 204-218 math inner="n"
+        text 218-224 " faces"
+        text 224-225 "\n"
+    paragraph 237-317
+      text 237-266 "A value with no close quote: "
+      tag 266-297 math inner="x^2" display="block"
+      text 297-302 " and "
+      tag 302-316 math inner="y"
+      text 316-317 "."

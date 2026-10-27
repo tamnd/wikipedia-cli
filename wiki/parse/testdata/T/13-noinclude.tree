@@ -1,0 +1,31 @@
+document 0-291
+  section 0-291 level=0
+    paragraph 0-157
+      text 0-5 "Shown"
+      tag 5-39 noinclude
+        text 16-27 " also shown"
+      tag 39-79 includeonly inner=" hidden {{x}}"
+      text 79-80 "."
+      text 80-81 "\n"
+      tag 81-157 syntaxhighlight inner="\ndef f(): return \"{{not}}\"\n" lang="python"
+    pre 158-193
+      text 158-176 " preformatted line"
+      text 176-177 "\n"
+      text 177-193 " second pre line"
+    paragraph 194-290
+      tag 194-227 div class="x"
+        text 209-213 "div "
+        italic 213-221
+          text 215-219 "text"
+      tag 227-233 span
+      text 233-241 "no close"
+      text 241-242 "\n"
+      tag 242-254 sup
+        text 247-248 "2"
+      text 254-259 " and "
+      tag 259-271 sub
+        text 264-265 "i"
+      text 271-276 " and "
+      tag 276-281 br self
+      text 281-286 " and "
+      tag 286-290 br

@@ -1,0 +1,4 @@
+'''bold''' and ''italic'' and '''''both''''' and '''bold ''inner'' bold''' end.
+''open italic only
+next line'''bold'''
+l''''x''''s
