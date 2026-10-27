@@ -20,10 +20,11 @@ func newDumpCmd(app *App) *cobra.Command {
   wiki dump download <file>      download with resume + sha1 verify
   wiki dump pages <file.xml>     stream a pages-articles dump to records
   wiki dump grep <pattern> <f>   stream pages whose title/text matches
-  wiki dump export <file.xml>    convert articles to Markdown or text`,
+  wiki dump export <file.xml>    convert articles to Markdown or text
+  wiki dump sql <file.sql.gz>    stream the rows of a SQL table dump`,
 	}
 	cmd.AddCommand(newDumpListCmd(app), newDumpDownloadCmd(app), newDumpPagesCmd(app),
-		newDumpGrepCmd(app), newDumpExportCmd(app))
+		newDumpGrepCmd(app), newDumpExportCmd(app), newDumpSQLCmd(app))
 	return cmd
 }
 
