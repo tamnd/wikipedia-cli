@@ -142,6 +142,7 @@ Quick start:
 		newStatsCmd(app),
 		newConvertCmd(app),
 		newTexvcCmd(app),
+		newParsoidCmd(app),
 		newParseCmd(app),
 		newDumpCmd(app),
 		newConfigCmd(app),
