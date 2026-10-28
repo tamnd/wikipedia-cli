@@ -37,7 +37,8 @@ type Math struct {
 	Block   bool
 	// Transcluded is true when the body of a template made the formula, so
 	// the wikitext of the page does not have it. A formula in a parameter of
-	// a template is in the wikitext of the page, so it is not transcluded.
+	// a template, or in the text between the templates of one transclusion,
+	// is in the wikitext of the page, so it is not transcluded.
 	Transcluded bool
 }
 
@@ -206,8 +207,9 @@ func (out *Reading) element(n *html.Node, params *string) {
 	}
 }
 
-// paramsText gives the wikitext of the parameters of the templates of a
-// data-mw, joined.
+// paramsText gives the wikitext of the page in a data-mw, joined: the
+// parameters of the templates, and the text between the templates of a
+// transclusion with several parts.
 func paramsText(d string) string {
 	var mw dataMW
 	if json.Unmarshal([]byte(d), &mw) != nil {
@@ -215,6 +217,12 @@ func paramsText(d string) string {
 	}
 	var b strings.Builder
 	for _, raw := range mw.Parts {
+		var text string
+		if json.Unmarshal(raw, &text) == nil {
+			b.WriteString(text)
+			b.WriteByte('\n')
+			continue
+		}
 		var p part
 		if json.Unmarshal(raw, &p) != nil || p.Template == nil {
 			continue

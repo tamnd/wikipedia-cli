@@ -25,7 +25,7 @@ func TestRead(t *testing.T) {
 	if r.Page != 12345 || r.Revision != 678 || r.SHA1 != "abc123" || r.Refs != 1 || r.TeXHTML != 2 {
 		t.Errorf("reading = %+v", r)
 	}
-	want := []Math{{TeX: "W", AltText: `{\displaystyle W}`}, {TeX: "m", AltText: `{\displaystyle m}`}, {TeX: `\Z`, AltText: `{\displaystyle \mathbb {Z} }`, Transcluded: true}, {TeX: "f(x) = x", AltText: `{\displaystyle f(x)=x}`, Block: true}, {TeX: `\mathrm {H_2O}`, AltText: `{\displaystyle \mathrm {H_2O} }`}}
+	want := []Math{{TeX: "W", AltText: `{\displaystyle W}`}, {TeX: "m", AltText: `{\displaystyle m}`}, {TeX: "k", AltText: `{\displaystyle k}`}, {TeX: `\Z`, AltText: `{\displaystyle \mathbb {Z} }`, Transcluded: true}, {TeX: "f(x) = x", AltText: `{\displaystyle f(x)=x}`, Block: true}, {TeX: `\mathrm {H_2O}`, AltText: `{\displaystyle \mathrm {H_2O} }`}}
 	if !slices.Equal(r.Math, want) {
 		t.Errorf("math = %+v", r.Math)
 	}
