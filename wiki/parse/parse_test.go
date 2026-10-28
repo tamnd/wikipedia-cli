@@ -140,6 +140,27 @@ func TestLimits(t *testing.T) {
 	}
 }
 
+// TestTagOffsetsAfterUnicode checks the tags after a letter whose lower case
+// has another byte length, as İ. The offsets of the tags must not move.
+func TestTagOffsetsAfterUnicode(t *testing.T) {
+	src := strings.Repeat("İstanbul ", 20) + "a<ref>b</ref> c<REF name=x>d</REF>"
+	doc, err := Parse(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkSpans(t, doc.Root, 0, len(src))
+	var refs []string
+	Walk(doc.Root, func(n *Node) bool {
+		if n.Kind == KindTag && n.Name == "ref" {
+			refs = append(refs, src[n.InnerStart:n.InnerEnd])
+		}
+		return true
+	})
+	if strings.Join(refs, ",") != "b,d" {
+		t.Errorf("refs %q", refs)
+	}
+}
+
 func FuzzParse(f *testing.F) {
 	files, _ := filepath.Glob("testdata/T/*.wiki")
 	for _, p := range files {

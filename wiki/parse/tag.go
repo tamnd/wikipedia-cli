@@ -157,7 +157,7 @@ func (p *parser) tagIndex(prefix string) []int {
 		return v
 	}
 	if p.lower == "" && p.src != "" {
-		p.lower = strings.ToLower(p.src)
+		p.lower = asciiLower(p.src)
 	}
 	var out []int
 	for i := 0; ; {
@@ -232,4 +232,17 @@ func parseAttrs(s string) map[string]string {
 		out[name] = val
 	}
 	return out
+}
+
+// asciiLower gives s with the ASCII letters in lower case. The tag names are
+// ASCII. strings.ToLower can change the byte length of a letter, as for the
+// letter İ, and then the offsets in the lower text do not match the source.
+func asciiLower(s string) string {
+	b := []byte(s)
+	for i, c := range b {
+		if 'A' <= c && c <= 'Z' {
+			b[i] = c + 'a' - 'A'
+		}
+	}
+	return string(b)
 }
