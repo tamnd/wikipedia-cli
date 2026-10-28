@@ -77,7 +77,7 @@ type Stream struct {
 
 // StreamsOf gives the streams of the index that hold one or more of the
 // pages, in the order of the dump. It also gives the ids of the pages that
-// the index does not have.
+// the index does not have. A nil set gives each stream of the dump.
 func StreamsOf(indexPath string, pages map[int64]bool) ([]Stream, []int64, error) {
 	var (
 		out  []Stream
@@ -92,7 +92,7 @@ func StreamsOf(indexPath string, pages map[int64]bool) ([]Stream, []int64, error
 			}
 			cur, need = e.Offset, false
 		}
-		if pages[e.PageID] {
+		if pages == nil || pages[e.PageID] {
 			need = true
 			seen[e.PageID] = true
 		}
@@ -187,7 +187,8 @@ func ReadStream(f io.ReaderAt, size int64, s Stream) ([]Page, error) {
 }
 
 // ReadPages reads the streams of the dump with the number of workers, and
-// calls fn for each page of the set, in the order of the dump. fn runs on
+// calls fn for each page of the set, in the order of the dump. A nil set
+// gives each page of the streams. fn runs on
 // one goroutine at a time. An error of fn or of a stream stops the read.
 func ReadPages(dumpPath string, streams []Stream, pages map[int64]bool, workers int, fn func(Page) error) error {
 	f, err := os.Open(dumpPath) // #nosec G304 -- the caller names the dump
@@ -257,7 +258,7 @@ func ReadPages(dumpPath string, streams []Stream, pages map[int64]bool, workers 
 			return stop(r.err)
 		}
 		for _, p := range r.pages {
-			if !pages[p.ID] {
+			if pages != nil && !pages[p.ID] {
 				continue
 			}
 			if err := fn(p); err != nil {

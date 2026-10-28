@@ -68,6 +68,17 @@ func TestReadPages(t *testing.T) {
 			t.Errorf("page 12: %+v", got[1])
 		}
 	}
+	all, missing, err := StreamsOf(testIndex, nil)
+	if err != nil || len(missing) != 0 || !slices.Equal(all, []Stream{{137, 429}, {429, -1}}) {
+		t.Fatalf("all streams %v, missing %v, err %v", all, missing, err)
+	}
+	var ids []int64
+	if err := ReadPages(testDump, all, nil, 2, func(p Page) error { ids = append(ids, p.ID); return nil }); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(ids, []int64{10, 11, 12}) {
+		t.Errorf("all pages %v", ids)
+	}
 	stop := errors.New("stop")
 	if err := ReadPages(testDump, ss, set, 2, func(Page) error { return stop }); !errors.Is(err, stop) {
 		t.Errorf("the error of fn: %v", err)
