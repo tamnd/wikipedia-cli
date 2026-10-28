@@ -22,17 +22,17 @@ func TestRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.Page != 12345 || r.Revision != 678 || r.SHA1 != "abc123" || r.Refs != 1 {
+	if r.Page != 12345 || r.Revision != 678 || r.SHA1 != "abc123" || r.Refs != 1 || r.TeXHTML != 2 {
 		t.Errorf("reading = %+v", r)
 	}
 	want := []Math{{TeX: "W", AltText: `{\displaystyle W}`}, {TeX: "m", AltText: `{\displaystyle m}`}, {TeX: `\Z`, AltText: `{\displaystyle \mathbb {Z} }`, Transcluded: true}, {TeX: "f(x) = x", AltText: `{\displaystyle f(x)=x}`, Block: true}, {TeX: `\mathrm {H_2O}`, AltText: `{\displaystyle \mathrm {H_2O} }`}}
 	if !slices.Equal(r.Math, want) {
 		t.Errorf("math = %+v", r.Math)
 	}
-	if len(r.Transclusions) != 2 {
+	if len(r.Transclusions) != 3 {
 		t.Fatalf("transclusions = %+v", r.Transclusions)
 	}
-	tr := r.Transclusions[1]
+	tr := r.Transclusions[2]
 	if len(tr.Templates) != 2 || tr.Templates[0].Name != "math theorem" || tr.Templates[0].Target != "Template:Math_theorem" || tr.Templates[0].Params["name"] != "Widget lemma" || tr.Templates[1].Name != "anchor" {
 		t.Errorf("transclusion = %+v", tr)
 	}

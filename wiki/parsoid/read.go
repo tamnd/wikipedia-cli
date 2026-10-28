@@ -24,6 +24,10 @@ type Reading struct {
 	// expansion of the templates, in the order of the page.
 	Anchors []string
 	Refs    int // the number of reference marks
+	// TeXHTML is the number of formulas in HTML, such as the output of the
+	// templates math and mvar: the spans of the class texhtml. A span that
+	// the body of a template made does not count.
+	TeXHTML int
 }
 
 // Math is one formula of <math>, <chem> or <ce>.
@@ -143,12 +147,16 @@ func (out *Reading) element(n *html.Node, params *string) {
 			out.Anchors = append(out.Anchors, id)
 		}
 	}
-	if slices.Contains(strings.Fields(attr(n, "class")), "anchor") {
+	types := strings.Fields(attr(n, "typeof"))
+	classes := strings.Fields(attr(n, "class"))
+	if slices.Contains(classes, "texhtml") && (params == nil || slices.Contains(types, "mw:Transclusion") || strings.Contains(*params, "{{")) {
+		out.TeXHTML++
+	}
+	if slices.Contains(classes, "anchor") {
 		if id := attr(n, "id"); id != "" {
 			out.Anchors = append(out.Anchors, id)
 		}
 	}
-	types := strings.Fields(attr(n, "typeof"))
 	if len(types) == 0 {
 		return
 	}
