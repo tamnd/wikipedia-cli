@@ -31,6 +31,10 @@ type Math struct {
 	TeX     string // the source of the tag, or the alttext without \displaystyle
 	AltText string // the TeX that MediaWiki rendered
 	Block   bool
+	// Transcluded is true when the body of a template made the formula, so
+	// the wikitext of the page does not have it. A formula in a parameter of
+	// a template is in the wikitext of the page, so it is not transcluded.
+	Transcluded bool
 }
 
 // Transclusion is one template call of the page: the parts of one data-mw.
@@ -82,20 +86,36 @@ func Read(r io.Reader) (*Reading, error) {
 		return nil, err
 	}
 	out := &Reading{}
-	var walk func(n *html.Node)
-	walk = func(n *html.Node) {
+	// abouts gives the wikitext of the parameters of each transclusion, by
+	// its about id. Parsoid gives each node of the output of a template the
+	// about id of the transclusion, and the first node, which has the
+	// data-mw, comes first in the order of the document.
+	abouts := map[string]*string{}
+	var walk func(n *html.Node, params *string)
+	walk = func(n *html.Node, params *string) {
 		if n.Type == html.ElementNode {
-			out.element(n)
+			if slices.Contains(strings.Fields(attr(n, "typeof")), "mw:Transclusion") {
+				if a := attr(n, "about"); a != "" && abouts[a] == nil {
+					wt := paramsText(attr(n, "data-mw"))
+					abouts[a] = &wt
+				}
+			}
+			if p := abouts[attr(n, "about")]; params == nil && p != nil {
+				params = p
+			}
+			out.element(n, params)
 		}
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			walk(c)
+			walk(c, params)
 		}
 	}
-	walk(doc)
+	walk(doc, nil)
 	return out, nil
 }
 
-func (out *Reading) element(n *html.Node) {
+// element reads one element. params is the wikitext of the parameters of
+// the transclusion when the element is in the output of a template.
+func (out *Reading) element(n *html.Node, params *string) {
 	switch n.DataAtom {
 	case atom.Html:
 		if a := attr(n, "about"); a != "" {
@@ -149,6 +169,7 @@ func (out *Reading) element(n *html.Node) {
 			} else {
 				m.TeX = stripDisplay(m.AltText)
 			}
+			m.Transcluded = params != nil && !strings.Contains(*params, m.TeX)
 			out.Math = append(out.Math, m)
 		case "mw:Extension/ref":
 			out.Refs++
@@ -175,6 +196,27 @@ func (out *Reading) element(n *html.Node) {
 			}
 		}
 	}
+}
+
+// paramsText gives the wikitext of the parameters of the templates of a
+// data-mw, joined.
+func paramsText(d string) string {
+	var mw dataMW
+	if json.Unmarshal([]byte(d), &mw) != nil {
+		return ""
+	}
+	var b strings.Builder
+	for _, raw := range mw.Parts {
+		var p part
+		if json.Unmarshal(raw, &p) != nil || p.Template == nil {
+			continue
+		}
+		for _, v := range p.Template.Params {
+			b.WriteString(v.WT)
+			b.WriteByte('\n')
+		}
+	}
+	return b.String()
 }
 
 // stripDisplay removes the {\displaystyle …} that MediaWiki puts around the
