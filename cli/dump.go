@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/tamnd/wikipedia-cli/wiki"
+	"github.com/tamnd/wikipedia-cli/wiki/dump"
 )
 
 func newDumpCmd(app *App) *cobra.Command {
@@ -144,8 +146,9 @@ func pickDumpFile(files []wiki.DumpFile, q string) *wiki.DumpFile {
 }
 
 func newDumpPagesCmd(app *App) *cobra.Command {
-	var namespace int
+	var namespace, workers int
 	var withText bool
+	var index, idsFile string
 	cmd := &cobra.Command{
 		Use:   "pages <file.xml[.bz2|.gz]>",
 		Short: "Stream-parse a pages-articles dump into records",
@@ -154,10 +157,21 @@ constant memory. Honors -n/--limit and --namespace; --text includes the body.
 
 Examples:
   wiki dump pages enwiki-latest-pages-articles1.xml.bz2 --namespace 0 -n 100 -o jsonl
-  wiki dump pages simplewiki-latest-pages-articles.xml.bz2 --text -n 1 -o json`,
+  wiki dump pages simplewiki-latest-pages-articles.xml.bz2 --text -n 1 -o json
+  wiki dump pages enwiki-20261001-pages-articles-multistream.xml.bz2 --index enwiki-20261001-pages-articles-multistream-index.txt.bz2 --ids ids.txt --text
+
+With --index and --ids, the command reads a multistream dump. It reads only
+the streams that hold the page ids of the ids file (one id on each line), so
+it is fast for a small set of pages.`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			n := 0
+			if (index == "") != (idsFile == "") {
+				return fmt.Errorf("give --index and --ids together")
+			}
+			if index != "" {
+				return dumpPagesByID(app, args[0], index, idsFile, workers, withText)
+			}
 			err := wiki.StreamPages(args[0], namespace, withText, func(p wiki.DumpPage) error {
 				if err := app.Out.Emit(dumpPageRow(p, withText)); err != nil {
 					return err
@@ -179,7 +193,52 @@ Examples:
 	}
 	cmd.Flags().IntVarP(&namespace, "namespace", "N", -1, "filter to a namespace id")
 	cmd.Flags().BoolVar(&withText, "text", false, "include the page body")
+	cmd.Flags().StringVar(&index, "index", "", "the index of a multistream dump")
+	cmd.Flags().StringVar(&idsFile, "ids", "", "a file of page ids, one on each line, to read from a multistream dump")
+	cmd.Flags().IntVar(&workers, "workers", 4, "the number of streams to read at the same time")
 	return cmd
+}
+
+// dumpPagesByID emits the pages of the ids file from a multistream dump.
+func dumpPagesByID(app *App, dumpPath, index, idsFile string, workers int, withText bool) error {
+	data, err := os.ReadFile(idsFile) // #nosec G304 -- the user names the file
+	if err != nil {
+		return wrapErr(err)
+	}
+	ids := map[int64]bool{}
+	for _, l := range strings.Fields(string(data)) {
+		id, err := strconv.ParseInt(l, 10, 64)
+		if err != nil {
+			return fmt.Errorf("%s: %q is not a page id", idsFile, l)
+		}
+		ids[id] = true
+	}
+	streams, missing, err := dump.StreamsOf(index, ids)
+	if err != nil {
+		return wrapErr(err)
+	}
+	if len(missing) > 0 {
+		fmt.Fprintf(os.Stderr, "%d page ids are not in the index\n", len(missing))
+	}
+	n := 0
+	err = dump.ReadPages(dumpPath, streams, ids, workers, func(p dump.Page) error {
+		row := wiki.DumpPage{ID: int(p.ID), NS: p.NS, Title: p.Title, RevID: int(p.RevID), Timestamp: p.Timestamp, Redirect: p.Redirect != "", Text: p.Text}
+		if err := app.Out.Emit(dumpPageRow(row, withText)); err != nil {
+			return err
+		}
+		n++
+		if app.Limit > 0 && n >= app.Limit {
+			return errStopStream
+		}
+		return nil
+	})
+	if err != nil && err != errStopStream {
+		return wrapErr(err)
+	}
+	if n == 0 {
+		return noResults("no pages matched")
+	}
+	return app.Out.Flush()
 }
 
 func newDumpGrepCmd(app *App) *cobra.Command {

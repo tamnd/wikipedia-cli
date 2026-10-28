@@ -72,7 +72,7 @@ Shell completion is built in: `wiki completion bash|zsh|fish|powershell`.
 | `wiki sparql <query \| @file \| ->` | SPARQL against the Wikidata Query Service |
 | `wiki dump list` | files of a dump; `--wiki`, `--date` |
 | `wiki dump download <file>` | download with resume and sha1 verify |
-| `wiki dump pages <file>` | stream-parse a pages-articles dump |
+| `wiki dump pages <file>` | stream-parse a pages-articles dump. With `--index` and `--ids`, read only the pages of the ids file from a multistream dump |
 | `wiki dump grep <pattern> <file>` | pages matching a regexp |
 | `wiki dump export [file]` | convert a dump to a Markdown or text corpus |
 | `wiki dump sql <file>` | stream the rows of a SQL table dump; `--columns`, `--schema` |
