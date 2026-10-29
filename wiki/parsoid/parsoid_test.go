@@ -89,6 +89,52 @@ func TestFetch(t *testing.T) {
 	}
 }
 
+// TestFetchParse checks the fallback to the Action API after HTTP 504.
+func TestFetchParse(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/page/html/") {
+			http.Error(w, "upstream timeout", http.StatusGatewayTimeout)
+			return
+		}
+		q := r.URL.Query()
+		if q.Get("action") != "parse" || q.Get("parsoid") != "1" || r.UserAgent() != "test/1.0" {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+		switch q.Get("oldid") {
+		case "678":
+			_, _ = w.Write([]byte(`{"parse":{"revid":678,"text":"<div class=\"mw-parser-output\"><section data-mw-section-id=\"0\"><p><span typeof=\"mw:Extension/math\" data-mw='{\"name\":\"math\",\"body\":{\"extsrc\":\"x^2\"}}'>x</span></p></section></div>"}}`))
+		case "679":
+			_, _ = w.Write([]byte(`{"parse":{"revid":680,"text":"<p>x</p>"}}`))
+		default:
+			_, _ = w.Write([]byte(`{"error":{"code":"nosuchrevid","info":"There is no revision"}}`))
+		}
+	}))
+	defer srv.Close()
+	f := &Fetcher{Base: srv.URL, API: srv.URL + "/w/api.php", UserAgent: "test/1.0"}
+	ctx := context.Background()
+	if _, err := f.Fetch(ctx, "Banach space", 678); !errors.Is(err, ErrTimeout) {
+		t.Fatalf("the error of HTTP 504 is %v", err)
+	}
+	body, err := f.FetchParse(ctx, 678)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rd, err := Read(strings.NewReader(string(body)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rd.Revision != 678 || len(rd.Math) != 1 || rd.Math[0].TeX != "x^2" {
+		t.Errorf("the reading is revision %d, math %+v", rd.Revision, rd.Math)
+	}
+	if _, err := f.FetchParse(ctx, 679); err == nil || !strings.Contains(err.Error(), "the revision 680") {
+		t.Errorf("the error of another revision is %v", err)
+	}
+	if _, err := f.FetchParse(ctx, 1); !errors.Is(err, ErrNotFound) {
+		t.Errorf("the error of a missing revision is %v", err)
+	}
+}
+
 func TestStripDisplay(t *testing.T) {
 	for in, want := range map[string]string{`{\displaystyle x^2}`: "x^2", `{\textstyle a}`: "a", "b": "b"} {
 		if got := stripDisplay(in); got != want {
