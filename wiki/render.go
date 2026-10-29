@@ -66,7 +66,7 @@ func (r *renderer) children(n *html.Node) {
 func (r *renderer) element(n *html.Node) {
 	switch n.DataAtom {
 	case atom.H1, atom.H2, atom.H3, atom.H4, atom.H5, atom.H6:
-		level := int(n.DataAtom-atom.H1) + 1
+		level := int(n.Data[1] - '0')
 		r.block()
 		title := strings.TrimSpace(inlineText(n))
 		if title == "" {
